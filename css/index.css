@@ -1,0 +1,33 @@
+@font-face {
+    font-family: Delicious;
+    src: url('Delicious-Roman.otf');
+}
+
+
+body,
+html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-image: url('/images/bg.jpg');
+    /* Add the background image */
+    background-size: cover;
+    /* Ensures the image covers the entire screen */
+    background-position: center;
+    /* Centers the image */
+    background-repeat: no-repeat;
+    /* Prevents tiling of the image */
+    background-color: #f0f0f0;
+    /* Fallback color in case the image fails to load */
+    overflow: hidden;
+    /* Prevent scrolling */
+}
+
+.home-title {
+    font-size: 100px;
+
+}
