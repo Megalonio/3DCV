@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Dela+Gothic+One&family=Press+Start+2P&family=Rammetto+One&family=Righteous&family=Six+Caps&display=swap');
 
-body, html {
+body,
+html {
     margin: 0;
     padding: 0;
     height: 100%;
@@ -8,41 +9,60 @@ body, html {
     display: flex;
     flex-direction: column;
     align-items: center;
-    background-image: url('bg.jpg'); /* Add the background image */
-    background-size: cover; /* Ensures the image covers the entire screen */
-    background-position: center; /* Centers the image */
-    background-repeat: no-repeat; /* Prevents tiling of the image */
-    background-color: #f0f0f0; /* Fallback color in case the image fails to load */
-    overflow: hidden; /* Prevent scrolling */
+    background-image: url('images/bg.jpg');
+    /* Add the background image */
+    background-size: cover;
+    /* Ensures the image covers the entire screen */
+    background-position: center;
+    /* Centers the image */
+    background-repeat: no-repeat;
+    /* Prevents tiling of the image */
+    background-color: #f0f0f0;
+    /* Fallback color in case the image fails to load */
+    overflow: hidden;
+    /* Prevent scrolling */
 }
 
 /* Style for the file picker container */
 .file-picker-container {
     position: fixed;
-    top: 20px; /* Adjust to position the button vertically */
-    left: 20px; /* Adjust to position the button horizontally */
+    top: 20px;
+    /* Adjust to position the button vertically */
+    left: 20px;
+    /* Adjust to position the button horizontally */
     z-index: 100;
 }
 
 /* Apply styles to the button to show a folder icon */
 .file-picker-container button {
-    background-color: transparent; /* Remove background */
-    color: white; /* White text (icon color) */
-    border: none; /* Remove border */
-    padding: 100px; /* 100px padding */
-    font-size: 32px; /* Icon size */
-    cursor: pointer; /* Make it clickable */
-    font-family: 'Black Han Sans', serif; /* Ensure Black Han Sans is applied */
+    background-color: transparent;
+    /* Remove background */
+    color: white;
+    /* White text (icon color) */
+    border: none;
+    /* Remove border */
+    padding: 100px;
+    /* 100px padding */
+    font-size: 32px;
+    /* Icon size */
+    cursor: pointer;
+    /* Make it clickable */
+    font-family: 'Black Han Sans', serif;
+    /* Ensure Black Han Sans is applied */
 }
 
 .container {
-    width: 100%; /* Take full width of the screen */
-    height: 100%; /* Take full height of the screen */
-    perspective: 1000px; /* Create depth for 3D effect */
+    width: 100%;
+    /* Take full width of the screen */
+    height: 100%;
+    /* Take full height of the screen */
+    perspective: 1000px;
+    /* Create depth for 3D effect */
     cursor: grab;
     position: relative;
     display: flex;
-    justify-content: center; /* Center the image inside the container */
+    justify-content: center;
+    /* Center the image inside the container */
     align-items: center;
 }
 
@@ -51,13 +71,17 @@ body, html {
 }
 
 #image {
-    width: 100%; /* Ensures the image fills the container */
-    height: 100%; /* Ensures the image fills the container */
+    width: 100%;
+    /* Ensures the image fills the container */
+    height: 100%;
+    /* Ensures the image fills the container */
     object-fit: contain;
     max-width: 100%;
     max-height: 100%;
-    transform-style: preserve-3d; /* Enable 3D transformations */
-    backface-visibility: hidden; /* Hide the back side of the image during rotation */
+    transform-style: preserve-3d;
+    /* Enable 3D transformations */
+    backface-visibility: hidden;
+    /* Hide the back side of the image during rotation */
     user-select: none;
     -moz-user-select: none;
     -webkit-user-select: none;
@@ -66,25 +90,31 @@ body, html {
 }
 
 #image.hidden {
-    opacity: 0; /* Hide the image during transitions */
+    opacity: 0;
+    /* Hide the image during transitions */
 }
 
 .nav-control {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: 50vh; /* Keep the width fixed or adjust as needed */
-    height: 50vh; /* 100% of the viewport height */
+    width: 50vh;
+    /* Keep the width fixed or adjust as needed */
+    height: 50vh;
+    /* 100% of the viewport height */
     background: rgba(0, 0, 0, 0);
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    font-size: 48px; /* Adjust font size as needed */
+    font-size: 48px;
+    /* Adjust font size as needed */
     cursor: pointer;
     z-index: 10;
-    transition: transform 0.3s ease; /* Smooth transition */
-    transform-origin: center; /* Ensure scaling happens from the center */
+    transition: transform 0.3s ease;
+    /* Smooth transition */
+    transform-origin: center;
+    /* Ensure scaling happens from the center */
 }
 
 .nav-left {
@@ -96,46 +126,59 @@ body, html {
 }
 
 .nav-control:hover {
-    font-size: 128px; /* Increased font size */
+    font-size: 128px;
+    /* Increased font size */
     transition: font-size 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .nav-control:active {
-    color: #1aa7ec; /* Instant blue font color on click */
-    transition: none; /* No transition on active state for instant effect */
+    color: #1aa7ec;
+    /* Instant blue font color on click */
+    transition: none;
+    /* No transition on active state for instant effect */
 }
 
 .nav-control {
-    color: white; /* Initial font color */
-    transition: color 0.5s ease-out; /* Smooth transition back to white */
+    color: white;
+    /* Initial font color */
+    transition: color 0.5s ease-out;
+    /* Smooth transition back to white */
 }
 
 /* Fullscreen button (top-right corner) */
 #fullscreen-btn {
     position: fixed;
-    top: 20px; /* Align with top edge */
-    right: 20px; /* Align with right edge */
+    top: 20px;
+    /* Align with top edge */
+    right: 20px;
+    /* Align with right edge */
     background-color: transparent;
     color: white;
     border: none;
-    font-size: 32px; /* Icon size stays the same */
+    font-size: 32px;
+    /* Icon size stays the same */
     cursor: pointer;
     font-family: 'Black Han Sans', serif;
     font-weight: 400;
     font-style: normal;
-    padding: 100px; /* 100px padding */
-    line-height: 0; /* Prevent extra spacing around the icon */
+    padding: 100px;
+    /* 100px padding */
+    line-height: 0;
+    /* Prevent extra spacing around the icon */
 }
 
 #fullscreen-btn:hover {
-    opacity: 0.8; /* Keep hover effect */
+    opacity: 0.8;
+    /* Keep hover effect */
 }
 
 /* Folder container (top-left corner) */
 .folder-container {
     position: fixed;
-    top: 10px; /* Align with top edge */
-    left: 10px; /* Align with left edge */
+    top: 10px;
+    /* Align with top edge */
+    left: 10px;
+    /* Align with left edge */
     z-index: 100;
 }
 
@@ -143,52 +186,73 @@ body, html {
     background-color: transparent;
     color: white;
     border: none;
-    font-size: 32px; /* Icon size stays the same */
+    font-size: 32px;
+    /* Icon size stays the same */
     cursor: pointer;
     font-family: 'Black Han Sans', serif;
     font-weight: 400;
     font-style: normal;
-    padding: 100px; /* 100px padding */
-    line-height: 0; /* Prevent extra spacing around the icon */
+    padding: 100px;
+    /* 100px padding */
+    line-height: 0;
+    /* Prevent extra spacing around the icon */
 }
 
 #folder-btn:hover {
-    opacity: 0.8; /* Keep hover effect */
+    opacity: 0.8;
+    /* Keep hover effect */
 }
 
 /* Style for the container of the message */
 #message-container {
-    position: fixed;            /* Fixes the position of the message container */
-    top: 50%;                   /* Vertically centers the container */
-    left: 50%;                  /* Horizontally centers the container */
-    transform: translate(-50%, -50%); /* Adjusts for exact centering */
-    text-align: center;         /* Centers the text inside */
-    background-color: black;    /* Black background for the message */
-    padding: 20px;              /* Adds padding inside the container */
-    border-radius: 8px;         /* Rounds the corners of the container */
-    border: 0px solid white;    /* White border around the container */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Adds a subtle shadow */
-    z-index: 9999;              /* Makes sure the message stays on top */
-    color: white;               /* White text color */
-    font-family: Arial, sans-serif; /* Sets the font */
-    font-weight: bold;          /* Makes the text bold */
-    font-size: 20px;            /* Adjusts the font size */
-    max-width: 10000%;             /* Prevents the text from being too wide */
-    width: auto;                /* Allows the container width to adapt to the text */
-    white-space: normal;        /* Allows the text to wrap */
+    position: fixed;
+    /* Fixes the position of the message container */
+    top: 50%;
+    /* Vertically centers the container */
+    left: 50%;
+    /* Horizontally centers the container */
+    transform: translate(-50%, -50%);
+    /* Adjusts for exact centering */
+    text-align: center;
+    /* Centers the text inside */
+    background-color: black;
+    /* Black background for the message */
+    padding: 20px;
+    /* Adds padding inside the container */
+    border-radius: 8px;
+    /* Rounds the corners of the container */
+    border: 0px solid white;
+    /* White border around the container */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    /* Adds a subtle shadow */
+    z-index: 9999;
+    /* Makes sure the message stays on top */
+    color: white;
+    /* White text color */
+    font-family: Arial, sans-serif;
+    /* Sets the font */
+    font-weight: bold;
+    /* Makes the text bold */
+    font-size: 20px;
+    /* Adjusts the font size */
+    max-width: 10000%;
+    /* Prevents the text from being too wide */
+    width: auto;
+    /* Allows the container width to adapt to the text */
+    white-space: normal;
+    /* Allows the text to wrap */
 }
 
 /* Remove unnecessary class for message text, use #message-container */
 #message-container p {
-    margin: 0;                  /* Removes default margin from the <p> tag */
-    font-size: 20px;            /* Font size for the message text */
-    color: white;               /* White text color */
-    font-family: Arial, sans-serif; /* Sets the font */
-    font-weight: bold;          /* Makes the text bold */
+    margin: 0;
+    /* Removes default margin from the <p> tag */
+    font-size: 20px;
+    /* Font size for the message text */
+    color: white;
+    /* White text color */
+    font-family: Arial, sans-serif;
+    /* Sets the font */
+    font-weight: bold;
+    /* Makes the text bold */
 }
-
-
-
-
-
-

@@ -56,7 +56,7 @@ function rotateAndChangeImage() {
 
     // Step 2: After 250ms, change the image to "back.png" and rotate instantly to -90 degrees
     setTimeout(() => {
-        image.src = 'back.png';  // Change the image to "back.png"
+        image.src = 'images/back.png';  // Change the image to "back.png"
         
         currentRotationY = -90;  // Rotate instantly to -90 degrees
         image.style.transition = 'none';  // Disable transition for this instant rotation
