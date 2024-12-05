@@ -128,7 +128,7 @@ function rotateAndChangeImage2() {
 
                 // Step 5: After 250ms, change the image to the next image and rotate instantly to 90 degrees
                 setTimeout(() => {
-                    currentImageIndex = (currentImageIndex + 1) % imageFiles.length;  // Get the next image
+                    currentImageIndex = (currentImageIndex - 1 + imageFiles.length) % imageFiles.length;  // Adjust for negative indices and wrap around
                     loadImage(imageFiles[currentImageIndex]);  // Load the next image
                     image.src = imageFiles[currentImageIndex];  // Change to the next image
 
