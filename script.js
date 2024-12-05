@@ -100,8 +100,61 @@ function rotateAndChangeImage() {
     }, 250); // Wait 250ms before changing to "back.png"
 }
 
+function rotateAndChangeImage2() {
+    // Step 1: Rotate to -90 degrees (look to your right) with linear transition (250ms)
+    currentRotationY = -90;
+    image.style.transition = 'transform 0.25s linear';  // Fast linear transition (250ms)
+    updateTransform();
+
+    // Step 2: After 250ms, change the image to "back.png" and rotate instantly to 90 degrees
+    setTimeout(() => {
+        image.src = 'images/back.png';  // Change the image to "back.png"
+        
+        currentRotationY = 90;  // Rotate instantly to 90 degrees
+        image.style.transition = 'none';  // Disable transition for this instant rotation
+        updateTransform();
+
+        // Step 3: After 250ms, rotate back to 0 degrees (look at you) with linear transition
+        setTimeout(() => {
+            currentRotationY = 0;  // Rotate back to 0 degrees
+            image.style.transition = 'transform 0.25s linear';  // Re-enable linear transition for smooth movement
+            updateTransform();
+
+            // Step 4: After 250ms, rotate to -90 degrees (look to your right) with linear transition
+            setTimeout(() => {
+                currentRotationY = -90;
+                image.style.transition = 'transform 0.25s linear';  // Re-enable linear transition for smooth movement
+                updateTransform();
+
+                // Step 5: After 250ms, change the image to the next image and rotate instantly to 90 degrees
+                setTimeout(() => {
+                    currentImageIndex = (currentImageIndex + 1) % imageFiles.length;  // Get the next image
+                    loadImage(imageFiles[currentImageIndex]);  // Load the next image
+                    image.src = imageFiles[currentImageIndex];  // Change to the next image
+
+                    currentRotationY = 90;  // Rotate instantly to 90 degrees
+                    image.style.transition = 'none';  // Disable transition for this instant rotation
+                    updateTransform();
+
+                    // Step 6: After 250ms, rotate back to 0 degrees (look at you) with linear transition
+                    setTimeout(() => {
+                        currentRotationY = 0;
+                        image.style.transition = 'transform 0.25s linear';  // Re-enable linear transition for smooth movement
+                        updateTransform();
+                    }, 250);  // Wait 250ms before final transition back to 0 degrees
+
+                }, 250); // Wait 250ms before changing to the next image
+
+            }, 250); // Wait 250ms before rotating to -90 degrees
+
+        }, 250); // Wait 250ms before rotating back to 0 degrees
+
+    }, 250); // Wait 250ms before changing to "back.png"
+}
+
+
 // Image navigation button clicks
-navLeft.addEventListener('click', rotateAndChangeImage);
+navLeft.addEventListener('click', rotateAndChangeImage2);
 navRight.addEventListener('click', rotateAndChangeImage);
 
 // Mouse down: Start rotation only, not movement
