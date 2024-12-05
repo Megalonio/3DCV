@@ -262,7 +262,7 @@ arrowContainer.addEventListener('click', () => {
 
 // Select necessary elements
 const imageRow = document.getElementById('image-row');
-const displayArea = document.getElementById('displayArea'); // New area to show the clicked image
+const currentImage = document.getElementById('image'); // The main display image
 
 // Event listener for the "Load Images" button
 loadImagesButton.addEventListener('click', () => {
@@ -289,15 +289,10 @@ folderPicker.addEventListener('change', (e) => {
                 imgElement.alt = file.name; // Set alt text to file name
                 imageRow.appendChild(imgElement); // Add the img element to the image row
 
-                // Add click event to display the clicked image
+                // Add click event to display the clicked image in the main display
                 imgElement.addEventListener('click', () => {
-                    displayArea.innerHTML = ''; // Clear the display area
-                    const largeImage = document.createElement('img'); // Create a new img element
-                    largeImage.src = imgElement.src; // Set the clicked image's source
-                    largeImage.alt = imgElement.alt; // Set the alt text
-                    largeImage.style.maxWidth = '100%'; // Adjust for display size
-                    largeImage.style.height = 'auto'; // Maintain aspect ratio
-                    displayArea.appendChild(largeImage); // Display the clicked image
+                    currentImage.src = imgElement.src; // Update the main image's source
+                    currentImage.alt = imgElement.alt; // Update the main image's alt text
                 });
             };
 
