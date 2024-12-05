@@ -213,6 +213,25 @@ container.addEventListener('wheel', function (e) {
     updateTransform();
 });
 
+
+// Middle Mouse Zoom Reset
+container.addEventListener('mousedown', function (e) {
+    if (e.button === 1) { // Middle mouse button (wheel) clicked
+        e.preventDefault();
+
+        // Set zoom level to 1
+        currentZoom = 1;
+
+        // Remove transition for instant zoom effect
+        image.style.transition = 'none';
+
+        // Update zoom to 1
+        updateTransform();
+    }
+});
+
+
+
 // Prevent default drag behavior on the image
 image.addEventListener('dragstart', (e) => e.preventDefault());
 
