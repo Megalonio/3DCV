@@ -363,22 +363,32 @@ folderPicker.addEventListener('change', (e) => {
 
                 // Add click event to display the clicked image in the main display
                 imgElement.addEventListener('click', () => {
-                    // Add downward animation
+                    // Step 1: Smoothly reset any transformations (zoom, twist, etc.)
                     currentImage.style.transition = 'transform 0.5s ease';
-                    currentImage.style.transform = 'translateY(150%)'; // Move image offscreen (downward)
+                    currentImage.style.transform = 'scale(1) rotate(0deg)'; // Reset zoom and rotation
 
-                    // Wait for the downward animation to complete
-                    currentImage.addEventListener('transitionend', function changeImage() {
-                        // Change the image source and alt text
-                        currentImage.src = imgElement.src;
-                        currentImage.alt = imgElement.alt;
+                    // Wait for the transformation reset to complete before starting the downward slide
+                    currentImage.addEventListener('transitionend', function resetTransform() {
+                        // Remove the transitionend listener to avoid triggering on future transitions
+                        currentImage.removeEventListener('transitionend', resetTransform);
 
-                        // Reset transform to bring the image back into view
+                        // Step 2: Apply downward animation after the reset
                         currentImage.style.transition = 'transform 0.5s ease';
-                        currentImage.style.transform = 'translateY(0)';
+                        currentImage.style.transform = 'translateY(150%)'; // Move image offscreen (downward)
 
-                        // Remove the event listener to avoid triggering on future animations
-                        currentImage.removeEventListener('transitionend', changeImage);
+                        // Step 3: Change the image after the downward animation completes
+                        currentImage.addEventListener('transitionend', function changeImage() {
+                            // Change the image source and alt text
+                            currentImage.src = imgElement.src;
+                            currentImage.alt = imgElement.alt;
+
+                            // Step 4: Bring the image back into view
+                            currentImage.style.transition = 'transform 0.5s ease';
+                            currentImage.style.transform = 'translateY(0)';
+
+                            // Remove the event listener to avoid triggering on future animations
+                            currentImage.removeEventListener('transitionend', changeImage);
+                        });
                     });
                 });
             };
@@ -387,10 +397,3 @@ folderPicker.addEventListener('change', (e) => {
         });
     }
 });
-
-
-
-
-
-
-
