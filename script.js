@@ -158,6 +158,7 @@ function rotateAndChangeImage2() {
 navLeft.addEventListener('click', rotateAndChangeImage2);
 navRight.addEventListener('click', rotateAndChangeImage);
 
+
 // Mouse down: Start rotation only, not movement
 container.addEventListener('mousedown', function (e) {
     if (e.button === 0) {  // Left-click
