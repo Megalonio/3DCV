@@ -275,7 +275,7 @@ html {
 }
 
   
-  /* Image Container (Pull-Up Menu) */
+/* Image Container (Pull-Up Menu) */
 #image-container {
     position: fixed; /* Keep it fixed at the bottom of the viewport */
     bottom: 0;
@@ -285,25 +285,33 @@ html {
     border-top: 0px solid #ccc; /* Optional: Remove if you want no border */
     height: 200px; /* Adjust as needed for your images */
     overflow-x: auto; /* Allow horizontal scrolling */
+    overflow-y: visible; /* Allow content to expand outside vertically */
     display: flex;
     justify-content: center;
     transform: translateY(100%); /* Start hidden (off-screen) */
     transition: transform 0.3s ease; /* Smooth transition for pull-up effect */
     z-index: 999; /* Higher than most elements, but lower than the arrow */
+    pointer-events: all; /* Allow interactions with child elements */
 }
-  
-  /* Image Row */
-  #image-row {
+
+/* Image Row */
+#image-row {
     display: flex;
     gap: 50px; /* Add spacing between images */
-  }
-  
- /* Images */
+    overflow: visible; /* Ensure images can overflow the row */
+}
+
+/* Images */
 img {
-    max-width: 200px; /* Limits the width to 100px */
-    max-height: 175px; /* Limits the height to 100px */
+    max-width: 200px; /* Limits the width to 200px */
+    max-height: 175px; /* Limits the height to 175px */
     width: auto; /* Allows the image to scale proportionally */
     height: auto; /* Ensures the aspect ratio is maintained */
     object-fit: contain; /* Scales the image without cropping */
-  }
-  
+    transition: transform 0.3s ease, box-shadow 0.3s ease; /* Smooth animation */
+}
+
+/* Ensure the body does not clip overflowed content */
+body {
+    overflow: visible; /* Allow the entire page to show overflowing elements */
+}
