@@ -266,13 +266,14 @@ html {
     bottom: 20px; /* Adjust distance from bottom */
     left: 50%; /* Center horizontally */
     transform: translateX(-50%);
-    background-color: #000;
-    color: white;
-    border: none;
+    background-color: transparent; /* Make the background transparent */
+    color: white; /* Keep text or icon visible */
+    border: 0px solid white; /* Optional: Add a border if you want visibility */
     padding: 10px;
     cursor: pointer;
     z-index: 1000; /* Keep above most other elements */
-  }
+}
+
   
   /* Image Container (Pull-Up Menu) */
 #image-container {
