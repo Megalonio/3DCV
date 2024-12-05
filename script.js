@@ -100,24 +100,19 @@ function rotateAndChangeImage() {
     }, 250); // Wait 250ms before changing to "back.png"
 }
 
-
-
-
-
-
-
-
 // Image navigation button clicks
 navLeft.addEventListener('click', rotateAndChangeImage);
 navRight.addEventListener('click', rotateAndChangeImage);
 
-// Mouse down: Start rotation
+// Mouse down: Start rotation only, not movement
 container.addEventListener('mousedown', function (e) {
-    e.preventDefault();
-    isMouseDown = true;
-    container.style.cursor = 'none';
-    startX = e.clientX;
-    startY = e.clientY;
+    if (e.button === 0) {  // Left-click
+        e.preventDefault();
+        isMouseDown = true;
+        container.style.cursor = 'none';
+        startX = e.clientX;
+        startY = e.clientY;
+    }
 });
 
 // Mouse move: Rotate the card (responsive while dragging)
@@ -163,38 +158,15 @@ container.addEventListener('wheel', function (e) {
 
     // Update zoom without delay
     updateTransform();
-
-    // Optionally, you can re-enable zoom transition for smoothness here if needed
-    // image.style.transition = 'transform 0.3s ease-in-out';  // Re-enable transition
 });
 
 // Prevent default drag behavior on the image
 image.addEventListener('dragstart', (e) => e.preventDefault());
 
-document.getElementById("fullscreen-btn").addEventListener("click", function() {
-    if (!document.fullscreenElement) {
-        if (document.documentElement.requestFullscreen) {
-            document.documentElement.requestFullscreen();
-        } else if (document.documentElement.mozRequestFullScreen) { // Firefox
-            document.documentElement.mozRequestFullScreen();
-        } else if (document.documentElement.webkitRequestFullscreen) { // Chrome, Safari, Opera
-            document.documentElement.webkitRequestFullscreen();
-        } else if (document.documentElement.msRequestFullscreen) { // IE/Edge
-            document.documentElement.msRequestFullscreen();
-        }
-    } else {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        } else if (document.mozCancelFullScreen) { // Firefox
-            document.mozCancelFullScreen();
-        } else if (document.webkitExitFullscreen) { // Chrome, Safari, Opera
-            document.webkitExitFullscreen();
-        } else if (document.msExitFullscreen) { // IE/Edge
-            document.msExitFullscreen();
-        }
-    }
+// Prevent right-click menu from showing
+container.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
 });
-
 
 // Hide the message container after 10 seconds
 setTimeout(function() {
@@ -207,8 +179,52 @@ setTimeout(function() {
 
 
 
+// Right-click behavior for moving image (Right-click only)
+let isRightMouseDown = false; // For right-click behavior
+let startYRightClick; // Store the initial Y position for right-click drag
+let initialTranslateY = 0; // To store the initial vertical position of the image
+let currentImageY = 0; // To track the vertical position of the image
 
-// Example: Add or remove the zoom animation based on some condition
-image.classList.add('zoom-in-out'); // Adds the zoom animation
-// Or
-image.classList.remove('zoom-in-out'); // Removes the zoom animation
+// Prevent right-click menu from showing
+container.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+});
+
+// Right mouse down: Start moving image
+container.addEventListener('mousedown', function (e) {
+    if (e.button === 2) { // Right-click
+        isRightMouseDown = true;
+        startYRightClick = e.clientY;
+        initialTranslateY = currentImageY; // Store the current vertical position
+        container.style.cursor = 'move'; // Change cursor to indicate movement
+
+        // Disable transition while moving
+        image.style.transition = 'none';
+    }
+});
+
+// Right mouse move: Move image up and down
+document.addEventListener('mousemove', function (e) {
+    if (isRightMouseDown) {
+        const deltaY = e.clientY - startYRightClick;
+        currentImageY = initialTranslateY + deltaY;
+
+        // Apply the vertical movement (translateY) without rotating
+        image.style.transform = `rotateX(${currentRotationX}deg) rotateY(${currentRotationY}deg) translateY(${currentImageY}px) scale(${currentZoom})`;
+    }
+});
+
+// Right mouse up: Stop moving image and ease back to original position
+document.addEventListener('mouseup', function (e) {
+    if (e.button === 2) { // Right-click
+        isRightMouseDown = false;
+        container.style.cursor = 'default'; // Reset the cursor
+
+        // Enable the transition to smoothly return to the original position
+        image.style.transition = 'transform 0.5s ease'; // Apply easing effect
+        currentImageY = 0; // Reset vertical position to 0 (or original position)
+
+        // Apply the transition back to the original position
+        image.style.transform = `rotateX(${currentRotationX}deg) rotateY(${currentRotationY}deg) translateY(${currentImageY}px) scale(${currentZoom})`;
+    }
+});
