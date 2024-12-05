@@ -363,8 +363,23 @@ folderPicker.addEventListener('change', (e) => {
 
                 // Add click event to display the clicked image in the main display
                 imgElement.addEventListener('click', () => {
-                    currentImage.src = imgElement.src; // Update the main image's source
-                    currentImage.alt = imgElement.alt; // Update the main image's alt text
+                    // Add downward animation
+                    currentImage.style.transition = 'transform 0.5s ease';
+                    currentImage.style.transform = 'translateY(150%)'; // Move image offscreen (downward)
+
+                    // Wait for the downward animation to complete
+                    currentImage.addEventListener('transitionend', function changeImage() {
+                        // Change the image source and alt text
+                        currentImage.src = imgElement.src;
+                        currentImage.alt = imgElement.alt;
+
+                        // Reset transform to bring the image back into view
+                        currentImage.style.transition = 'transform 0.5s ease';
+                        currentImage.style.transform = 'translateY(0)';
+
+                        // Remove the event listener to avoid triggering on future animations
+                        currentImage.removeEventListener('transitionend', changeImage);
+                    });
                 });
             };
 
@@ -372,3 +387,10 @@ folderPicker.addEventListener('change', (e) => {
         });
     }
 });
+
+
+
+
+
+
+
