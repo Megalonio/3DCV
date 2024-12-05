@@ -347,6 +347,12 @@ loadImagesButton.addEventListener('click', () => {
     folderPicker.click(); // Trigger file input dialog
 });
 
+// Track the previous transformation state
+let previousTransform = {
+    scale: 1,
+    rotation: 0
+};
+
 // Handle folder picker file selection
 folderPicker.addEventListener('change', (e) => {
     const imageFiles = Array.from(e.target.files)
@@ -369,32 +375,58 @@ folderPicker.addEventListener('change', (e) => {
 
                 // Add click event to display the clicked image in the main display
                 imgElement.addEventListener('click', () => {
-                    // Step 1: Smoothly reset any transformations (zoom, twist, etc.)
+                    // Step 1: Store the current transformation state before starting
+                    const currentComputedStyle = window.getComputedStyle(currentImage);
+                    const currentTransform = currentComputedStyle.transform;
+                    
+                    // Extract current scale and rotation
+                    const transformMatrix = new DOMMatrix(currentTransform);
+                    const currentScale = Math.sqrt(transformMatrix.a * transformMatrix.a + transformMatrix.b * transformMatrix.b);
+                    const currentRotation = Math.atan2(transformMatrix.b, transformMatrix.a) * (180 / Math.PI);
+
+                    // Smoothly reset any transformations (zoom, twist, etc.)
                     currentImage.style.transition = 'transform 0.5s ease';
                     currentImage.style.transform = 'scale(1) rotate(0deg)'; // Reset zoom and rotation
 
                     // Wait for the transformation reset to complete before starting the downward slide
-                    currentImage.addEventListener('transitionend', function resetTransform() {
-                        // Remove the transitionend listener to avoid triggering on future transitions
-                        currentImage.removeEventListener('transitionend', resetTransform);
+                    currentImage.addEventListener('transitionend', function resetTransform(event) {
+                        // Ensure we're only handling the reset transformation event
+                        if (event.propertyName === 'transform') {
+                            // Remove the transitionend listener to avoid triggering on future transitions
+                            currentImage.removeEventListener('transitionend', resetTransform);
 
-                        // Step 2: Apply downward animation after the reset
-                        currentImage.style.transition = 'transform 0.5s ease';
-                        currentImage.style.transform = 'translateY(150%)'; // Move image offscreen (downward)
-
-                        // Step 3: Change the image after the downward animation completes
-                        currentImage.addEventListener('transitionend', function changeImage() {
-                            // Change the image source and alt text
-                            currentImage.src = imgElement.src;
-                            currentImage.alt = imgElement.alt;
-
-                            // Step 4: Bring the image back into view
+                            // Step 2: Apply downward animation after the reset
                             currentImage.style.transition = 'transform 0.5s ease';
-                            currentImage.style.transform = 'translateY(0)';
+                            currentImage.style.transform = 'translateY(150%)'; // Move image offscreen (downward)
 
-                            // Remove the event listener to avoid triggering on future animations
-                            currentImage.removeEventListener('transitionend', changeImage);
-                        });
+                            // Step 3: Change the image after the downward animation completes
+                            currentImage.addEventListener('transitionend', function changeImage(changeEvent) {
+                                if (changeEvent.propertyName === 'transform') {
+                                    // Change the image source and alt text
+                                    currentImage.src = imgElement.src;
+                                    currentImage.alt = imgElement.alt;
+
+                                    // Step 4: Bring the image back into view
+                                    currentImage.style.transition = 'transform 0.5s ease';
+                                    currentImage.style.transform = 'translateY(0)';
+
+                                    // Step 5: Restore previous transformation after image change
+                                    currentImage.addEventListener('transitionend', function restoreTransform(restoreEvent) {
+                                        if (restoreEvent.propertyName === 'transform') {
+                                            // Restore previous scale and rotation
+                                            currentImage.style.transition = 'transform 0.5s ease';
+                                            currentImage.style.transform = `scale(${currentScale}) rotate(${currentRotation}deg)`;
+
+                                            // Remove event listeners
+                                            currentImage.removeEventListener('transitionend', restoreTransform);
+                                        }
+                                    });
+
+                                    // Remove the event listener to avoid triggering on future animations
+                                    currentImage.removeEventListener('transitionend', changeImage);
+                                }
+                            });
+                        }
                     });
                 });
             };
