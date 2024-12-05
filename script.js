@@ -1,6 +1,7 @@
 const folderPicker = document.getElementById('folder-picker');
 const loadImagesButton = document.getElementById('load-images');
 const image = document.getElementById('image');
+image.src = 'images/image.png';
 const container = document.querySelector('.container');
 const navLeft = document.querySelector('.nav-left');
 const navRight = document.querySelector('.nav-right');
