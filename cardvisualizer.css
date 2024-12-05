@@ -256,3 +256,51 @@ html {
     font-weight: bold;
     /* Makes the text bold */
 }
+
+
+
+
+/* Arrow Button: Stays at the bottom */
+#arrow-container {
+    position: fixed;
+    bottom: 20px; /* Adjust distance from bottom */
+    left: 50%; /* Center horizontally */
+    transform: translateX(-50%);
+    background-color: #000;
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    z-index: 1000; /* Keep above most other elements */
+  }
+  
+  /* Image Container (Pull-Up Menu) */
+  #image-container {
+    position: fixed; /* Keep it fixed at the bottom of the viewport */
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #fff;
+    border-top: 1px solid #ccc;
+    height: 200px; /* Adjust as needed for your images */
+    overflow-x: auto; /* Allow horizontal scrolling */
+    display: flex;
+    justify-content: center;
+    transform: translateY(100%); /* Start hidden (off-screen) */
+    transition: transform 0.3s ease; /* Smooth transition for pull-up effect */
+    z-index: 999; /* Higher than most elements, but lower than the arrow */
+  }
+  
+  /* Image Row */
+  #image-row {
+    display: flex;
+    gap: 10px; /* Add spacing between images */
+  }
+  
+  /* Images */
+  img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+  }
+  

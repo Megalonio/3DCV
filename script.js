@@ -228,3 +228,80 @@ document.addEventListener('mouseup', function (e) {
         image.style.transform = `rotateX(${currentRotationX}deg) rotateY(${currentRotationY}deg) translateY(${currentImageY}px) scale(${currentZoom})`;
     }
 });
+
+
+
+
+
+
+
+// Select the elements
+const arrowContainer = document.getElementById('arrow-container');
+const imageContainer = document.getElementById('image-container');
+
+// Initially hide the image container
+imageContainer.style.transform = 'translateY(100%)'; // Start off-screen
+imageContainer.style.transition = 'transform 0.3s ease'; // Smooth transition
+
+// Toggle the pull-up menu when the button is clicked
+arrowContainer.addEventListener('click', () => {
+  // Check if the menu is already pulled up
+  if (imageContainer.style.transform === 'translateY(100%)') {
+    // Pull it up
+    imageContainer.style.transform = 'translateY(0)';
+  } else {
+    // Push it back down
+    imageContainer.style.transform = 'translateY(100%)';
+  }
+});
+
+
+
+
+
+
+// Select necessary elements
+const imageRow = document.getElementById('image-row');
+const displayArea = document.getElementById('displayArea'); // New area to show the clicked image
+
+// Event listener for the "Load Images" button
+loadImagesButton.addEventListener('click', () => {
+    folderPicker.click(); // Trigger file input dialog
+});
+
+// Handle folder picker file selection
+folderPicker.addEventListener('change', (e) => {
+    const imageFiles = Array.from(e.target.files)
+        .filter(file => file.name.toLowerCase().endsWith('.png')); // Filter for PNG files
+
+    if (imageFiles.length > 0) {
+        // Clear any existing images in the row
+        imageRow.innerHTML = '';
+
+        // Loop through each selected image file and add it to the image row
+        imageFiles.forEach((file) => {
+            const imgElement = document.createElement('img'); // Create new img element
+            const reader = new FileReader();
+
+            // Load image data
+            reader.onload = (e) => {
+                imgElement.src = e.target.result; // Set the loaded image as the source
+                imgElement.alt = file.name; // Set alt text to file name
+                imageRow.appendChild(imgElement); // Add the img element to the image row
+
+                // Add click event to display the clicked image
+                imgElement.addEventListener('click', () => {
+                    displayArea.innerHTML = ''; // Clear the display area
+                    const largeImage = document.createElement('img'); // Create a new img element
+                    largeImage.src = imgElement.src; // Set the clicked image's source
+                    largeImage.alt = imgElement.alt; // Set the alt text
+                    largeImage.style.maxWidth = '100%'; // Adjust for display size
+                    largeImage.style.height = 'auto'; // Maintain aspect ratio
+                    displayArea.appendChild(largeImage); // Display the clicked image
+                });
+            };
+
+            reader.readAsDataURL(file); // Read the image file
+        });
+    }
+});
