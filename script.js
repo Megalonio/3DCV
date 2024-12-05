@@ -12,8 +12,8 @@ let currentRotationY = 0;
 let startX, startY;
 let currentZoom = 1;
 const zoomStep = 0.1;
-const zoomMin = 0.5;
-const zoomMax = 2.0;
+const zoomMin = 1;
+const zoomMax = 4.0;
 
 // Image navigation variables
 let imageFiles = [];
