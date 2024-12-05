@@ -214,7 +214,7 @@ container.addEventListener('wheel', function (e) {
 });
 
 
-// Middle Mouse Zoom Reset
+// Middle Mouse Zoom and Rotation Reset
 container.addEventListener('mousedown', function (e) {
     if (e.button === 1) { // Middle mouse button (wheel) clicked
         e.preventDefault();
@@ -222,10 +222,14 @@ container.addEventListener('mousedown', function (e) {
         // Set zoom level to 1
         currentZoom = 1;
 
-        // Remove transition for instant zoom effect
+        // Reset rotation to initial values (0 for both axes)
+        currentRotationX = 0;
+        currentRotationY = 0;
+
+        // Remove transition for instant zoom and rotation reset effect
         image.style.transition = 'none';
 
-        // Update zoom to 1
+        // Update zoom and rotation
         updateTransform();
     }
 });
