@@ -6,6 +6,9 @@ const container = document.querySelector('.container');
 const navLeft = document.querySelector('.nav-left');
 const navRight = document.querySelector('.nav-right');
 const messageContainer = document.getElementById('message-container'); // Get the message container
+const soundHover = new Audio('sounds/Hover.wav'); // Path to your sound file
+const soundClick = new Audio('sounds/Click.wav'); // Path to your .wav file
+const buttons = document.querySelectorAll('button');
 
 let isMouseDown = false;
 let currentRotationX = 0;
@@ -50,6 +53,7 @@ function loadImage(file) {
 }
 
 function rotateAndChangeImage() {
+    soundClick.play(); // Play sound when the button is clicked
     // Step 1: Rotate to 90 degrees (look to your left) with linear transition (250ms)
     currentRotationY = 90;
     image.style.transition = 'transform 0.25s linear';  // Fast linear transition (250ms)
@@ -102,6 +106,7 @@ function rotateAndChangeImage() {
 }
 
 function rotateAndChangeImage2() {
+    soundClick.play(); // Play sound when the button is clicked
     // Step 1: Rotate to -90 degrees (look to your right) with linear transition (250ms)
     currentRotationY = -90;
     image.style.transition = 'transform 0.25s linear';  // Fast linear transition (250ms)
@@ -323,6 +328,7 @@ imageContainer.style.transition = 'transform 0.3s ease'; // Smooth transition
 
 // Toggle the pull-up menu when the button is clicked
 arrowContainer.addEventListener('click', () => {
+    soundClick.play(); // Play sound when the button is clicked
   // Check if the menu is already pulled up
   if (imageContainer.style.transform === 'translateY(100%)') {
     // Pull it up
@@ -383,6 +389,7 @@ folderPicker.addEventListener('change', (e) => {
 
                 // Add click event to display the clicked image in the main display
                 imgElement.addEventListener('click', () => {
+                    soundClick.play(); // Play sound when the button is clicked
                     // Step 1: Smoothly reset any transformations (zoom, twist, etc.)
                     currentImage.style.transition = 'transform 0.5s ease';
                     currentImage.style.transform = 'scale(1) rotate(0deg)'; // Reset zoom and rotation
@@ -455,4 +462,32 @@ document.getElementById('fullscreen-btn').addEventListener('click', function() {
       }
     }
   });
+  
+
+
+
+
+buttons.forEach(button => {
+    button.addEventListener('mouseenter', function() {
+      // Randomize pitch between 0.95 (95%) and 1.05 (105%)
+      const randomPitch = Math.random() * 0.1 + 0.95; // Generates a number between 0.95 and 1.05
+      soundHover.playbackRate = randomPitch; // Apply the random pitch
+  
+      console.log(`Random pitch: ${randomPitch.toFixed(2)}`); // Debugging to check the random pitch
+      
+      soundHover.play(); // Play sound with randomized pitch
+    });
+});
+
+
+
+buttons.forEach(button => {
+  button.addEventListener('click', function() {
+    soundClick.play(); // Play sound when the button is clicked
+  });
+});
+
+
+
+
   
