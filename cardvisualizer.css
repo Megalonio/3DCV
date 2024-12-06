@@ -263,14 +263,29 @@ html {
     position: fixed;
     bottom: 20px; /* Adjust distance from bottom */
     left: 50%; /* Center horizontally */
-    transform: translateX(-50%);
+    transform: translateX(-50%); /* Center horizontally */
     background-color: transparent; /* Make the background transparent */
     color: white; /* Keep text or icon visible */
-    border: 0px solid white; /* Optional: Add a border if you want visibility */
+    border: 0px solid rgb(0, 0, 0); /* Optional: Add a border if you want visibility */
     padding: 10px;
     cursor: pointer;
     z-index: 1000; /* Keep above most other elements */
+    font-size: 32px; /* Adjust font size as needed */
+    transform-origin: center; /* Ensure scaling happens from the center */
+    display: inline-flex; /* Ensure the container fits the content properly */
+    text-shadow: 
+        -2px -2px 0 #000,  /* Top-left shadow */
+        2px -2px 0 #000,   /* Top-right shadow */
+        -2px 2px 0 #000,   /* Bottom-left shadow */
+        2px 2px 0 #000;    /* Bottom-right shadow */
 }
+
+/* Hover effect for the arrow container */
+#arrow-container:hover {
+    font-size: 48px; /* Increased font size on hover */
+    transform: translateX(-50%) scale(1.2); /* Add scaling effect */
+}
+
 
   
 /* Image Container (Pull-Up Menu) */

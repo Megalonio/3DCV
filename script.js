@@ -324,20 +324,30 @@ const imageContainer = document.getElementById('image-container');
 
 // Initially hide the image container
 imageContainer.style.transform = 'translateY(100%)'; // Start off-screen
-imageContainer.style.transition = 'transform 0.3s ease'; // Smooth transition
+imageContainer.style.transition = 'transform 0.3s ease'; // Smooth transition for the menu
+
+// Add smooth transition for the arrow
+arrowContainer.style.transition = 'bottom 0.3s ease'; // Smooth transition for the arrow
 
 // Toggle the pull-up menu when the button is clicked
 arrowContainer.addEventListener('click', () => {
     soundClick.play(); // Play sound when the button is clicked
-  // Check if the menu is already pulled up
-  if (imageContainer.style.transform === 'translateY(100%)') {
-    // Pull it up
-    imageContainer.style.transform = 'translateY(0)';
-  } else {
-    // Push it back down
-    imageContainer.style.transform = 'translateY(100%)';
-  }
+    
+    // Check if the menu is already pulled up
+    if (imageContainer.style.transform === 'translateY(100%)') {
+        // Pull it up
+        imageContainer.style.transform = 'translateY(0)';
+        // Move the arrow with the menu
+        arrowContainer.style.bottom = '220px'; // Adjust based on menu height
+    } else {
+        // Push it back down
+        imageContainer.style.transform = 'translateY(100%)';
+        // Reset arrow position
+        arrowContainer.style.bottom = '20px'; // Reset to original position
+    }
 });
+
+
 
 
 
