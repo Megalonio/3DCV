@@ -315,3 +315,52 @@ img {
 body {
     overflow: visible; /* Allow the entire page to show overflowing elements */
 }
+
+
+
+
+
+
+
+
+
+.container {
+    position: relative;
+}
+
+#image {
+    width: 100%; /* Ensure the image takes up the full width of its container */
+}
+
+#holo {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%; /* Adjust based on your desired size */
+    height: 100%; /* Adjust based on your desired size */
+    pointer-events: none; /* Optional: ensures the holograph doesn't interfere with interactions with the image */
+    z-index: 1; /* Ensures the holograph is on top of the image */
+}
+
+.nav-left, .nav-right {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 2em;
+    z-index: 2; /* Ensure the nav buttons are above the image and holograph */
+}
+
+.nav-left {
+    left: 10px;
+}
+
+.nav-right {
+    right: 10px;
+}
+
+#fullscreen-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 2; /* Ensure the fullscreen button is above other elements */
+}
