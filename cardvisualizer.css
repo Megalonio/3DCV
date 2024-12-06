@@ -207,11 +207,9 @@ html {
 #message-container {
     position: fixed;
     /* Fixes the position of the message container */
-    top: 50%;
-    /* Vertically centers the container */
-    left: 50%;
-    /* Horizontally centers the container */
-    transform: translate(-50%, -50%);
+    top: 0; /* Positions the container at the top */
+    left: 50%; /* Centers the container horizontally */
+    transform: translateX(-50%); /* Adjusts the horizontal position to be exact center */
     /* Adjusts for exact centering */
     text-align: center;
     /* Centers the text inside */
@@ -237,7 +235,7 @@ html {
     /* Adjusts the font size */
     max-width: 10000%;
     /* Prevents the text from being too wide */
-    width: auto;
+    width: 500px;
     /* Allows the container width to adapt to the text */
     white-space: normal;
     /* Allows the text to wrap */
