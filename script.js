@@ -382,6 +382,8 @@ folderPicker.addEventListener('change', (e) => {
     const imageFiles = Array.from(e.target.files)
         .filter(file => file.name.toLowerCase().endsWith('.png')); // Filter for PNG files
 
+    console.log(`Number of images imported: ${imageFiles.length}`); // Log the number of images imported
+
     if (imageFiles.length > 0) {
         // Clear any existing images in the row
         imageRow.innerHTML = '';
@@ -439,12 +441,14 @@ folderPicker.addEventListener('change', (e) => {
                         });
                     });
                 });
-            };
-
+            };  
             reader.readAsDataURL(file); // Read the image file
         });
-    }
+    }   
 });
+
+
+
 
 // FULLSCREEN
 document.getElementById('fullscreen-btn').addEventListener('click', function() {
@@ -500,4 +504,20 @@ buttons.forEach(button => {
 
 
 
-  
+const hiddenElement = document.querySelector('.nav-control'); // Select the element by class
+
+folderPicker.addEventListener('change', (e) => {
+    const imageFiles = Array.from(e.target.files)
+        .filter(file => file.name.toLowerCase().endsWith('.png')); // Filter for PNG files
+
+    // Control visibility of the nav-control, nav-left, and nav-right elements
+    if (imageFiles.length >= 2) {
+        hiddenElement.style.display = 'block'; // Reveal the nav-control element
+        navLeft.style.display = 'block'; // Reveal the nav-left element
+        navRight.style.display = 'block'; // Reveal the nav-right element
+    } else {
+        hiddenElement.style.display = 'none'; // Hide the nav-control element
+        navLeft.style.display = 'none'; // Hide the nav-left element
+        navRight.style.display = 'none'; // Hide the nav-right element
+    }
+});

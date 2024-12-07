@@ -117,13 +117,31 @@ html {
     /* Ensure scaling happens from the center */
 }
 
+.nav-left, .nav-right {
+    position: absolute;    /* Ensure the position relative to the container */
+    top: 50%;              /* Vertically center the buttons */
+    transform: translateY(-50%);  /* Adjust to ensure perfect vertical centering */
+    display: flex;         /* Use flexbox for centering content */
+    align-items: center;   /* Vertically center the text inside */
+    justify-content: center;  /* Horizontally center the text inside */
+    padding: 180px 200px;    /* Adjust padding to give the buttons size */
+    background-color: rgba(0, 0, 0, 0);  /* Optional background styling */
+    border-radius: 0px;    /* Optional rounded corners */
+    width: auto;           /* Allow the width to adjust to the content */
+    height: auto;          /* Allow the height to adjust to the content */
+    display: none;        /* Initially hidden */
+}
+
 .nav-left {
-    left: 0;
+    left: 0;               /* Position on the left side of the screen */
 }
 
 .nav-right {
-    right: 0;
+    right: 0;              /* Position on the right side of the screen */
 }
+
+
+
 
 .nav-control:hover {
     font-size: 128px;
