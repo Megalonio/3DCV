@@ -512,28 +512,3 @@ folderPicker.addEventListener('change', (e) => {
 
 
 
-// Add an event listener to the fullscreen button
-document.getElementById('fullscreen-btn').addEventListener('click', function () {
-    // Get the image element
-    const image = document.getElementById('image');
-    
-    // Get the file name from the image's `src` attribute
-    const src = image.src; // e.g., "https://example.com/images/Charizard-220.png"
-    
-    // Extract the file name from the `src` (removing the path and extension)
-    const fileName = src.substring(src.lastIndexOf('/') + 1, src.lastIndexOf('.')); // "Charizard-220"
-    
-    // Regular expression to extract species and HP
-    const regex = /(\w+)-(\d+)/;
-    const match = fileName.match(regex);
-
-    if (match) {
-      const species = match[1]; // e.g., "Charizard"
-      const hp = match[2];      // e.g., "220"
-      
-      // Send the extracted values to a browser pop-up
-      alert(`Species: ${species}\nHP: ${hp}`);
-    } else {
-      alert('File name does not match the expected pattern.');
-    }
-  });
