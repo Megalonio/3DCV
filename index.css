@@ -83,12 +83,13 @@ html {
 
     transform-style: preserve-3d;
     width: 90%;
-    height: 1000px;
+    height: 85vh; /*J'ai mit vh*/
     object-fit: contain;
-    max-width: 100%;
+    max-width: 75%;
     max-height: 100%;
     transform-style: preserve-3d;
     backface-visibility: hidden;
+    
 
 }
 
