@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Gacha Cards</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      background-color: #f0f0f0;
+    }
+    #folderButton {
+      margin-bottom: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #boosterPack {
+      width: 300px;
+      cursor: pointer;
+      transition: transform 0.3s ease-in-out;
+    }
+    #boosterPack.opening {
+      transform: scale(1.2) rotate(15deg);
+    }
+    #cardDisplay {
+      margin-top: 20px;
+      width: 300px;
+      height: 400px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: white;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+      position: relative;
+    }
+    #cardDisplay img {
+      max-width: 100%;
+      max-height: 100%;
+      cursor: grab;
+    }
+    #counter {
+      margin-top: 10px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    #navLeft,
+    #navRight {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 50px;
+      height: 50px;
+      background-color: rgba(0, 0, 0, 0.5);
+      color: white;
+      font-size: 24px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      border-radius: 50%;
+    }
+    #navLeft {
+      left: -60px;
+    }
+    #navRight {
+      right: -60px;
+    }
+    #navLeft:hover,
+    #navRight:hover {
+      background-color: rgba(0, 0, 0, 0.7);
+    }
+  </style>
+</head>
+<body>
+  <button id="folderButton">Import Folder</button>
+  <img id="boosterPack" src="images/booster.png" alt="Booster Pack">
+  <div id="cardDisplay">
+    <button id="navLeft" style="display: none;">&#8249;</button>
+    <button id="navRight" style="display: none;">&#8250;</button>
+  </div>
+  <div id="counter"></div>
+
+  <script>
+    const folderButton = document.getElementById('folderButton');
+    const boosterPack = document.getElementById('boosterPack');
+    const cardDisplay = document.getElementById('cardDisplay');
+    const navLeft = document.getElementById('navLeft');
+    const navRight = document.getElementById('navRight');
+    const counter = document.getElementById('counter');
+
+    let cards = [];
+    let gachaResults = [];
+    let currentCardIndex = 0;
+
+    // Variables for transformations
+    let isMouseDown = false;
+    let startX, startY;
+    let currentRotationX = 0, currentRotationY = 0, currentZoom = 1;
+    const zoomStep = 0.1, zoomMin = 0.5, zoomMax = 2;
+
+    // Import folder logic
+    folderButton.addEventListener('click', async () => {
+      try {
+        const directoryHandle = await window.showDirectoryPicker();
+        cards = [];
+
+        for await (const [name, handle] of directoryHandle.entries()) {
+          if (handle.kind === 'file' && name.endsWith('.png')) {
+            const file = await handle.getFile();
+            const match = name.match(/^(.+)-(\d+)%\.png$/);
+
+            if (match) {
+              const cardName = match[1].trim();
+              const cardChance = parseFloat(match[2].trim()) / 100;
+
+              cards.push({
+                name: cardName,
+                chance: cardChance,
+                file: file
+              });
+            }
+          }
+        }
+
+        if (cards.length === 0) {
+          alert('No valid image files found in the folder. Ensure filenames follow the format: Name-Percentage%.png');
+          return;
+        }
+
+        alert('Files imported successfully!');
+      } catch (error) {
+        console.error('Error importing folder:', error);
+        alert('Failed to import folder. Please try again.');
+      }
+    });
+
+    // Booster pack click logic
+    boosterPack.addEventListener('click', () => {
+      if (cards.length === 0) {
+        alert('Please import a folder first!');
+        return;
+      }
+
+      boosterPack.classList.add('opening');
+      setTimeout(() => {
+        boosterPack.style.display = 'none';
+        startGacha();
+      }, 500); // Animation duration
+    });
+
+    // Start the gacha process
+    function startGacha() {
+      gachaResults = getRandomCards(cards, 10);
+      currentCardIndex = 0;
+      displayCard(gachaResults[currentCardIndex]);
+      updateCounter();
+
+      // Show navigation buttons
+      navLeft.style.display = 'block';
+      navRight.style.display = 'block';
+    }
+
+    // Display a single card
+    function displayCard(card) {
+      if (!card) return;
+
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        const img = document.createElement('img');
+        img.src = event.target.result;
+        img.alt = card.name;
+
+        img.addEventListener('dragstart', (e) => e.preventDefault()); // Prevent drag behavior
+
+        img.style.transform = `rotateX(${currentRotationX}deg) rotateY(${currentRotationY}deg) scale(${currentZoom})`;
+
+        applyImageInteractions(img);
+
+        cardDisplay.innerHTML = ''; // Clear previous card
+        cardDisplay.appendChild(img); // Display the new card
+
+        // Add navigation buttons back
+        cardDisplay.appendChild(navLeft);
+        cardDisplay.appendChild(navRight);
+      };
+      reader.readAsDataURL(card.file);
+    }
+
+    // Update the counter display
+    function updateCounter() {
+      if (currentCardIndex < gachaResults.length) {
+        counter.textContent = `Card ${currentCardIndex + 1} of ${gachaResults.length}`;
+      } else {
+        counter.textContent = '';
+      }
+    }
+
+    // Navigation buttons
+    navLeft.addEventListener('click', () => {
+      if (currentCardIndex > 0) {
+        currentCardIndex--;
+        displayCard(gachaResults[currentCardIndex]);
+        updateCounter();
+      }
+    });
+
+    navRight.addEventListener('click', () => {
+      if (currentCardIndex < gachaResults.length - 1) {
+        currentCardIndex++;
+        displayCard(gachaResults[currentCardIndex]);
+        updateCounter();
+      } else {
+        alert('All cards revealed!');
+        resetBoosterPack();
+      }
+    });
+
+    // Reset the booster pack for another opening
+    function resetBoosterPack() {
+      boosterPack.style.display = 'block';
+      boosterPack.classList.remove('opening');
+      cardDisplay.innerHTML = '';
+      counter.textContent = '';
+
+      // Hide navigation buttons
+      navLeft.style.display = 'none';
+      navRight.style.display = 'none';
+    }
+
+    // Weighted random card selection
+    function getRandomCards(cards, count) {
+      const results = [];
+      const pool = [];
+
+      cards.forEach(card => {
+        const weight = Math.floor(card.chance * 100);
+        for (let i = 0; i < weight; i++) {
+          pool.push(card);
+        }
+      });
+
+      for (let i = 0; i < count; i++) {
+        const randomIndex = Math.floor(Math.random() * pool.length);
+        results.push(pool[randomIndex]);
+      }
+
+      return results;
+    }
+
+    // Apply interactions (rotation, zoom) to an image
+    function applyImageInteractions(image) {
+      // Mouse down: Start rotation
+      image.addEventListener('mousedown', (e) => {
+        if (e.button === 0) { // Left-click
+          e.preventDefault();
+          isMouseDown = true;
+          startX = e.clientX;
+          startY = e.clientY;
+        }
+      });
+
+      // Mouse move: Rotate or move
+      document.addEventListener('mousemove', (e) => {
+        if (isMouseDown) {
+          const deltaX = e.clientX - startX;
+          const deltaY = e.clientY - startY;
+
+          currentRotationX -= deltaY * 0.1;
+          currentRotationY += deltaX * 0.1;
+
+          currentRotationX = Math.max(Math.min(currentRotationX, 45), -45);
+          currentRotationY = Math.max(Math.min(currentRotationY, 45), -45);
+
+          image.style.transform = `rotateX(${currentRotationX}deg) rotateY(${currentRotationY}deg) scale(${currentZoom})`;
+          startX = e.clientX;
+          startY = e.clientY;
+        } else if (isRightMouseDown) {
+          const deltaY = e.clientY - startYRightClick;
+          currentImageY = deltaY;
+          image.style.transform = `rotateX(${currentRotationX}deg) rotateY(${currentRotationY}deg) translateY(${currentImageY}px) scale(${currentZoom})`;
+        }
+      });
+
+      // Mouse up: Stop rotation/movement
+      document.addEventListener('mouseup', (e) => {
+        if (e.button === 0) isMouseDown = false;
+        if (e.button === 2) isRightMouseDown = false;
+      });
+
+      // Mouse wheel: Zoom in/out
+      image.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        currentZoom = e.deltaY < 0 
+          ? Math.min(currentZoom + zoomStep, zoomMax) 
+          : Math.max(currentZoom - zoomStep, zoomMin);
+
+        image.style.transform = `rotateX(${currentRotationX}deg) rotateY(${currentRotationY}deg) scale(${currentZoom})`;
+      });
+
+      // Middle-click: Reset zoom and rotation
+      image.addEventListener('mousedown', (e) => {
+        if (e.button === 1) { // Middle-click
+          e.preventDefault();
+          currentRotationX = 0;
+          currentRotationY = 0;
+          currentZoom = 1;
+          currentImageY = 0;
+          image.style.transform = `rotateX(0deg) rotateY(0deg) scale(1)`;
+        }
+      });
+    }
+  </script>
+</body>
+</html>
