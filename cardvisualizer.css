@@ -395,3 +395,45 @@ body {
     right: 10px;
     z-index: 2; /* Ensure the fullscreen button is above other elements */
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Shine area setup */
+.shine {
+    width: 300px; /* Fixed width of the area */
+    height: 300px; /* Fixed height of the area */
+    border: 2px solid black; /* Optional: To visualize the area */
+    overflow: hidden; /* Ensures texture doesn't overflow */
+    position: relative; /* For positioning texture absolutely */
+  }
+  
+  /* Texture styling */
+  .texture {
+    width: 600px; /* Larger than the area to allow movement */
+    height: 600px;
+    background: url('images/cardshine.png') no-repeat;
+    background-size: cover;
+    position: absolute; /* Allows absolute movement inside area */
+    animation: moveDiagonally 5s linear infinite; /* Smooth diagonal movement */
+  }
+  
+  /* Diagonal movement using keyframes */
+  @keyframes moveDiagonally {
+    0% { transform: translate(0, 0); } /* Start position */
+    25% { transform: translate(-50%, -50%); } /* Top-left */
+    50% { transform: translate(-100%, 0); } /* Bottom-left */
+    75% { transform: translate(-50%, 50%); } /* Bottom-right */
+    100% { transform: translate(0, 0); } /* Back to start */
+  }
+  
