@@ -1,514 +1,895 @@
-const folderPicker = document.getElementById('folder-picker');
-const loadImagesButton = document.getElementById('load-images');
-const image = document.getElementById('image');
-image.src = 'images/image.png';
-const container = document.querySelector('.container');
-const navLeft = document.querySelector('.nav-left');
-const navRight = document.querySelector('.nav-right');
-const messageContainer = document.getElementById('message-container'); // Get the message container
-const soundHover = new Audio('sounds/Hover.wav'); // Path to your sound file
-const soundClick = new Audio('sounds/Click.wav'); // Path to your .wav file
-const buttons = document.querySelectorAll('button');
+// DOM Elements
+const uploadZone = document.getElementById('uploadZone');
+const videoInput = document.getElementById('videoInput');
+const uploadContainer = document.getElementById('uploadContainer');
+const videoSection = document.getElementById('videoSection');
+const videoPlayer = document.getElementById('videoPlayer');
+const animationPreview = document.getElementById('animationPreview');
+const loadingOverlay = document.getElementById('loadingOverlay');
+const resetSpriteBtn = document.getElementById('resetSpriteBtn');
+const clearFramesBtn = document.getElementById('clearFramesBtn');
+const previewBtn = document.getElementById('previewBtn');
+const generateSpriteBtn = document.getElementById('generateSpriteBtn');
+const exportIndividualBtn = document.getElementById('exportIndividualBtn');
+const spriteGrid = document.getElementById('spriteGrid');
+const navHint = document.getElementById('navHint');
+const previewHint = document.getElementById('previewHint');
+const fpsDisplay = document.getElementById('fpsDisplay');
+const frameCounter = document.getElementById('frameCounter');
 
-let isMouseDown = false;
-let currentRotationX = 0;
-let currentRotationY = 0;
-let startX, startY;
-let currentZoom = 1;
-const zoomStep = 0.1;
-const zoomMin = 1;
-const zoomMax = 4.0;
-
-// Image navigation variables
-let imageFiles = [];
-let currentImageIndex = 0;
-
-// Function to update transformations
-function updateTransform() {
-    image.style.transform = `rotateX(${currentRotationX}deg) rotateY(${currentRotationY}deg) scale(${currentZoom})`;
+// ─── Audio System ──────────────────────────────────────────────────────────
+const SFX = {
+    cursor:  new Audio('audio/menucursor.wav'),
+    select:  new Audio('audio/menuselect.wav'),
+    back:    new Audio('audio/menuback.wav'),
+    chord:   new Audio('audio/menuchord.wav'),
+};
+// Allow rapid re-triggering by cloning on each play
+function playSfx(name) {
+    const snd = SFX[name];
+    if (!snd) return;
+    const clone = snd.cloneNode();
+    clone.volume = snd.volume;
+    clone.play().catch(() => {});
 }
 
-folderPicker.addEventListener('change', (e) => {
-    imageFiles = Array.from(e.target.files)
-        .filter(file => file.name.toLowerCase().endsWith('.png'));
+// State
+let spriteSheetFrames = []; 
+let impactFrameIndex = -1; 
+let isPreviewing = false;
+let previewInterval = null;
+const VIDEO_NAV_STEP = 1 / 24; 
+
+// Range capture state
+let rangeStartTime = null;
+let rangeStartIndex = null;
+let rangeModeIndicator = null;
+
+// Hold-up range mode state
+let upHoldTimer = null;
+const UP_HOLD_DELAY = 300; // ms hold before range mode activates
+
+// ─── Seek Mode Config (edit these) ─────────────────────────────────────────
+const SEEK_INTERVAL_MS = 100;  // how often (ms) the video jumps in seek mode
+const SEEK_PHASES = [
+    { step: 1,    label: '1s/step'  },
+    { step: 2.5,  label: '2.5s/step' },
+    { step: 5,    label: '5s/step'  },
+    { step: 10,   label: '10s/step' },
+];
+
+// Seek runtime state (don't edit)
+let isSeekMode       = false;  // true while Shift is held
+let seekPhaseIndex   = 0;      // which SEEK_PHASES entry is active
+let seekStepInterval = null;   // interval driving movement
+let seekDirection    = 0;      // -1 or +1, set when arrow pressed in seek mode
+let seekModeIndicator = null;
+
+// Persistent FPS State
+let currentPreviewFps = parseInt(localStorage.getItem('preferredFps')) || 12;
+
+// Drag & Drop Enhancement
+uploadZone.addEventListener('click', () => videoInput.click());
+
+// Prevent default drag behaviors
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    uploadZone.addEventListener(eventName, preventDefaults, false);
+    document.body.addEventListener(eventName, preventDefaults, false);
+});
+
+function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+// Highlight drop zone when item is dragged over it
+['dragenter', 'dragover'].forEach(eventName => {
+    uploadZone.addEventListener(eventName, () => {
+        uploadZone.classList.add('dragover');
+    }, false);
+});
+
+['dragleave', 'drop'].forEach(eventName => {
+    uploadZone.addEventListener(eventName, () => {
+        uploadZone.classList.remove('dragover');
+    }, false);
+});
+
+// Handle dropped files
+uploadZone.addEventListener('drop', (e) => {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    if (files.length > 0) {
+        loadVideo(files[0]);
+    }
+});
+
+videoInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) loadVideo(file);
+});
+
+function loadVideo(file) {
+    // Animated loading messages
+    const loadingText = document.querySelector('.loading-text');
+    const loadingSubtext = document.querySelector('.loading-subtext');
     
-    if (imageFiles.length > 0) {
-        currentImageIndex = 0;
-        loadImage(imageFiles[currentImageIndex]);
-    }
-});
-
-// Load image from file
-function loadImage(file) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        image.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-}
-
-function rotateAndChangeImage() {
-    soundClick.play(); // Play sound when the button is clicked
-    // Step 1: Rotate to 90 degrees (look to your left) with linear transition (250ms)
-    currentRotationY = 90;
-    image.style.transition = 'transform 0.25s linear';  // Fast linear transition (250ms)
-    updateTransform();
-
-    // Step 2: After 250ms, change the image to "back.png" and rotate instantly to -90 degrees
-    setTimeout(() => {
-        image.src = 'images/back.png';  // Change the image to "back.png"
-        
-        currentRotationY = -90;  // Rotate instantly to -90 degrees
-        image.style.transition = 'none';  // Disable transition for this instant rotation
-        updateTransform();
-
-        // Step 3: After 250ms, rotate back to 0 degrees (look at you) with linear transition
-        setTimeout(() => {
-            currentRotationY = 0;  // Rotate back to 0 degrees
-            image.style.transition = 'transform 0.25s linear';  // Re-enable linear transition for smooth movement
-            updateTransform();
-
-            // Step 4: After 250ms, rotate to 90 degrees (look to your left) with linear transition
-            setTimeout(() => {
-                currentRotationY = 90;
-                image.style.transition = 'transform 0.25s linear';  // Re-enable linear transition for smooth movement
-                updateTransform();
-
-                // Step 5: After 250ms, change the image to the next image and rotate instantly to -90 degrees
-                setTimeout(() => {
-                    currentImageIndex = (currentImageIndex + 1) % imageFiles.length;  // Get the next image
-                    loadImage(imageFiles[currentImageIndex]);  // Load the next image
-                    image.src = imageFiles[currentImageIndex];  // Change to the next image
-
-                    currentRotationY = -90;  // Rotate instantly to -90 degrees
-                    image.style.transition = 'none';  // Disable transition for this instant rotation
-                    updateTransform();
-
-                    // Step 6: After 250ms, rotate back to 0 degrees (look at you) with linear transition
-                    setTimeout(() => {
-                        currentRotationY = 0;
-                        image.style.transition = 'transform 0.25s linear';  // Re-enable linear transition for smooth movement
-                        updateTransform();
-                    }, 250);  // Wait 250ms before final transition back to 0 degrees
-
-                }, 250); // Wait 250ms before changing to the next image
-
-            }, 250); // Wait 250ms before rotating to 90 degrees
-
-        }, 250); // Wait 250ms before rotating back to 0 degrees
-
-    }, 250); // Wait 250ms before changing to "back.png"
-}
-
-function rotateAndChangeImage2() {
-    soundClick.play(); // Play sound when the button is clicked
-    // Step 1: Rotate to -90 degrees (look to your right) with linear transition (250ms)
-    currentRotationY = -90;
-    image.style.transition = 'transform 0.25s linear';  // Fast linear transition (250ms)
-    updateTransform();
-
-    // Step 2: After 250ms, change the image to "back.png" and rotate instantly to 90 degrees
-    setTimeout(() => {
-        image.src = 'images/back.png';  // Change the image to "back.png"
-        
-        currentRotationY = 90;  // Rotate instantly to 90 degrees
-        image.style.transition = 'none';  // Disable transition for this instant rotation
-        updateTransform();
-
-        // Step 3: After 250ms, rotate back to 0 degrees (look at you) with linear transition
-        setTimeout(() => {
-            currentRotationY = 0;  // Rotate back to 0 degrees
-            image.style.transition = 'transform 0.25s linear';  // Re-enable linear transition for smooth movement
-            updateTransform();
-
-            // Step 4: After 250ms, rotate to -90 degrees (look to your right) with linear transition
-            setTimeout(() => {
-                currentRotationY = -90;
-                image.style.transition = 'transform 0.25s linear';  // Re-enable linear transition for smooth movement
-                updateTransform();
-
-                // Step 5: After 250ms, change the image to the next image and rotate instantly to 90 degrees
-                setTimeout(() => {
-                    currentImageIndex = (currentImageIndex - 1 + imageFiles.length) % imageFiles.length;  // Adjust for negative indices and wrap around
-                    loadImage(imageFiles[currentImageIndex]);  // Load the next image
-                    image.src = imageFiles[currentImageIndex];  // Change to the next image
-
-                    currentRotationY = 90;  // Rotate instantly to 90 degrees
-                    image.style.transition = 'none';  // Disable transition for this instant rotation
-                    updateTransform();
-
-                    // Step 6: After 250ms, rotate back to 0 degrees (look at you) with linear transition
-                    setTimeout(() => {
-                        currentRotationY = 0;
-                        image.style.transition = 'transform 0.25s linear';  // Re-enable linear transition for smooth movement
-                        updateTransform();
-                    }, 250);  // Wait 250ms before final transition back to 0 degrees
-
-                }, 250); // Wait 250ms before changing to the next image
-
-            }, 250); // Wait 250ms before rotating to -90 degrees
-
-        }, 250); // Wait 250ms before rotating back to 0 degrees
-
-    }, 250); // Wait 250ms before changing to "back.png"
-}
-
-
-// Image navigation button clicks
-navLeft.addEventListener('click', rotateAndChangeImage2);
-navRight.addEventListener('click', rotateAndChangeImage);
-
-
-// Mouse down: Start rotation only, not movement
-container.addEventListener('mousedown', function (e) {
-    if (e.button === 0) {  // Left-click
-        e.preventDefault();
-        isMouseDown = true;
-        container.style.cursor = 'none';
-        startX = e.clientX;
-        startY = e.clientY;
-    }
-});
-
-// Mouse move: Rotate the card (responsive while dragging)
-document.addEventListener('mousemove', function (e) {
-    if (!isMouseDown) return;
-
-    const deltaX = e.clientX - startX;
-    const deltaY = e.clientY - startY;
-
-    currentRotationX -= deltaY * 0.1;
-    currentRotationY += deltaX * 0.1;
-
-    currentRotationX = Math.max(Math.min(currentRotationX, 45), -45);
-    currentRotationY = Math.max(Math.min(currentRotationY, 45), -45);
-
-    // Update transform without causing delays
-    image.style.transition = 'none';  // Disable transition for drag
-    updateTransform();
-
-    startX = e.clientX;
-    startY = e.clientY;
-});
-
-// Mouse up: Stop rotation
-document.addEventListener('mouseup', function () {
-    isMouseDown = false;
-    container.style.cursor = 'grab';
-
-    // Re-enable transition after dragging is done
-    image.style.transition = 'transform 1s ease-in-out';  // Re-enable transition
-});
-
-// Mouse wheel: Zoom in/out (No delay)
-container.addEventListener('wheel', function (e) {
-    e.preventDefault();
-
-    currentZoom = e.deltaY < 0 
-        ? Math.min(currentZoom + zoomStep, zoomMax)
-        : Math.max(currentZoom - zoomStep, zoomMin);
-
-    // Remove transition to make zoom snappy
-    image.style.transition = 'none';  // Instant zoom
-
-    // Update zoom without delay
-    updateTransform();
-});
-
-
-// Middle Mouse Zoom and Rotation Reset
-container.addEventListener('mousedown', function (e) {
-    if (e.button === 1) { // Middle mouse button (wheel) clicked
-        e.preventDefault();
-
-        // Set zoom level to 1
-        currentZoom = 1;
-
-        // Reset rotation to initial values (0 for both axes)
-        currentRotationX = 0;
-        currentRotationY = 0;
-
-        // Remove transition for instant zoom and rotation reset effect
-        image.style.transition = 'none';
-
-        // Update zoom and rotation
-        updateTransform();
-    }
-});
-
-
-
-// Prevent default drag behavior on the image
-image.addEventListener('dragstart', (e) => e.preventDefault());
-
-// Prevent right-click menu from showing
-container.addEventListener('contextmenu', (e) => {
-    e.preventDefault();
-});
-
-// Hide the message container after 10 seconds
-setTimeout(function() {
-    if (messageContainer) {  // Check if the message container exists
-        messageContainer.style.display = 'none';
-    }
-}, 10000); // 10 seconds in milliseconds
-
-
-
-
-
-// Right-click behavior for moving image (Right-click only)
-let isRightMouseDown = false; // For right-click behavior
-let startYRightClick; // Store the initial Y position for right-click drag
-let initialTranslateY = 0; // To store the initial vertical position of the image
-let currentImageY = 0; // To track the vertical position of the image
-
-// Prevent right-click menu from showing
-container.addEventListener('contextmenu', (e) => {
-    e.preventDefault();
-});
-
-// Right mouse down: Start moving image
-container.addEventListener('mousedown', function (e) {
-    if (e.button === 2) { // Right-click
-        isRightMouseDown = true;
-        startYRightClick = e.clientY;
-        initialTranslateY = currentImageY; // Store the current vertical position
-        container.style.cursor = 'move'; // Change cursor to indicate movement
-
-        // Disable transition while moving
-        image.style.transition = 'none';
-    }
-});
-
-// Right mouse move: Move image up and down
-document.addEventListener('mousemove', function (e) {
-    if (isRightMouseDown) {
-        const deltaY = e.clientY - startYRightClick;
-        currentImageY = initialTranslateY + deltaY;
-
-        // Apply the vertical movement (translateY) without rotating
-        image.style.transform = `rotateX(${currentRotationX}deg) rotateY(${currentRotationY}deg) translateY(${currentImageY}px) scale(${currentZoom})`;
-    }
-});
-
-// Right mouse up: Stop moving image and ease back to original position
-document.addEventListener('mouseup', function (e) {
-    if (e.button === 2) { // Right-click
-        isRightMouseDown = false;
-        container.style.cursor = 'default'; // Reset the cursor
-
-        // Enable the transition to smoothly return to the original position
-        image.style.transition = 'transform 0.5s ease'; // Apply easing effect
-        currentImageY = 0; // Reset vertical position to 0 (or original position)
-
-        // Apply the transition back to the original position
-        image.style.transform = `rotateX(${currentRotationX}deg) rotateY(${currentRotationY}deg) translateY(${currentImageY}px) scale(${currentZoom})`;
-    }
-});
-
-
-
-
-
-
-
-// Select the elements
-const arrowContainer = document.getElementById('arrow-container');
-const imageContainer = document.getElementById('image-container');
-
-// Initially hide the image container
-imageContainer.style.transform = 'translateY(100%)'; // Start off-screen
-imageContainer.style.transition = 'transform 0.3s ease'; // Smooth transition for the menu
-
-// Add smooth transition for the arrow
-arrowContainer.style.transition = 'bottom 0.3s ease'; // Smooth transition for the arrow
-
-// Toggle the pull-up menu when the button is clicked
-arrowContainer.addEventListener('click', () => {
-    soundClick.play(); // Play sound when the button is clicked
+    const messages = [
+        { main: 'INITIALIZING', sub: 'Preparing video stream...' },
+        { main: 'LOADING', sub: 'Analyzing video data...' },
+        { main: 'PROCESSING', sub: 'Building frame buffer...' }
+    ];
     
-    // Check if the menu is already pulled up
-    if (imageContainer.style.transform === 'translateY(100%)') {
-        // Pull it up
-        imageContainer.style.transform = 'translateY(0)';
-        // Move the arrow with the menu
-        arrowContainer.style.bottom = '220px'; // Adjust based on menu height
-    } else {
-        // Push it back down
-        imageContainer.style.transform = 'translateY(100%)';
-        // Reset arrow position
-        arrowContainer.style.bottom = '20px'; // Reset to original position
+    loadingText.textContent = messages[0].main;
+    loadingSubtext.textContent = messages[0].sub;
+    
+    let msgIndex = 0;
+    const msgInterval = setInterval(() => {
+        msgIndex = (msgIndex + 1) % messages.length;
+        loadingText.textContent = messages[msgIndex].main;
+        loadingSubtext.textContent = messages[msgIndex].sub;
+    }, 500);
+    
+    loadingOverlay.classList.add('active');
+    videoPlayer.src = URL.createObjectURL(file);
+    
+    videoPlayer.addEventListener('loadedmetadata', () => {
+        clearInterval(msgInterval);
+        
+        // Smooth transition
+        setTimeout(() => {
+            uploadContainer.style.display = 'none';
+            videoSection.style.display = 'block';
+            resetInternalState();
+            
+            setTimeout(() => {
+                loadingOverlay.classList.remove('active');
+            }, 300);
+        }, 600);
+    }, { once: true });
+}
+
+resetSpriteBtn.addEventListener('click', () => {
+    playSfx('back');
+    
+    videoPlayer.src = "";
+    spriteSheetFrames = [];
+    impactFrameIndex = -1;
+    rangeStartTime = null;
+    rangeStartIndex = null;
+    hideRangeModeIndicator();
+    stopPreview();
+    
+    // Smooth transition back
+    videoSection.style.opacity = '0';
+    setTimeout(() => {
+        uploadContainer.style.display = 'flex';
+        videoSection.style.display = 'none';
+        videoSection.style.opacity = '1';
+    }, 300);
+    
+    videoInput.value = ""; 
+});
+
+// Clear all frames without resetting video
+clearFramesBtn.addEventListener('click', () => {
+    if (spriteSheetFrames.length === 0) return;
+    playSfx('back');
+    spriteSheetFrames = [];
+    impactFrameIndex = -1;
+    rangeStartTime = null;
+    rangeStartIndex = null;
+    hideRangeModeIndicator();
+    stopPreview();
+    rebuildSpriteGrid();
+    updateUI();
+});
+
+// Export each frame as individual PNGs inside a ZIP
+exportIndividualBtn.addEventListener('click', async () => {
+    if (spriteSheetFrames.length === 0) return;
+    
+    const loadingText = document.querySelector('.loading-text');
+    const loadingSubtext = document.querySelector('.loading-subtext');
+    loadingText.textContent = 'ZIPPING';
+    loadingSubtext.textContent = `Packing ${spriteSheetFrames.length} frames...`;
+    loadingOverlay.classList.add('active');
+    
+    const ordered = getOrderedFrames();
+    const zip = new JSZip();
+    
+    for (let i = 0; i < ordered.length; i++) {
+        const canvas = ordered[i].canvas;
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+        const arrayBuffer = await blob.arrayBuffer();
+        const padded = String(i + 1).padStart(3, '0');
+        zip.file(`frame_${padded}.png`, arrayBuffer);
+        loadingSubtext.textContent = `Packed ${i + 1}/${ordered.length} frames...`;
     }
+    
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(zipBlob);
+    const link = document.createElement('a');
+    link.download = `frames_${ordered.length}x.zip`;
+    link.href = url;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+    playSfx('chord');
+    
+    loadingText.textContent = 'SUCCESS';
+    loadingSubtext.textContent = `${ordered.length} PNGs zipped!`;
+    setTimeout(() => loadingOverlay.classList.remove('active'), 800);
 });
 
+function getOrderedFrames() {
+    if (impactFrameIndex === -1 || impactFrameIndex >= spriteSheetFrames.length) return spriteSheetFrames;
+    return [...spriteSheetFrames.slice(impactFrameIndex), ...spriteSheetFrames.slice(0, impactFrameIndex)];
+}
 
-
-
-
-
-
-
-// Select necessary elements
-const imageRow = document.getElementById('image-row');
-const currentImage = document.getElementById('image'); // The main display image
-
-// Event listener for the "Load Images" button
-loadImagesButton.addEventListener('click', () => {
-    folderPicker.click(); // Trigger file input dialog
+// Preview Logic with enhanced transitions
+previewBtn.addEventListener('click', () => {
+    if (isPreviewing) { playSfx('back'); stopPreview(); }
+    else { playSfx('select'); startPreview(); }
 });
 
-// Handle folder picker file selection
-folderPicker.addEventListener('change', (e) => {
-    const imageFiles = Array.from(e.target.files)
-        .filter(file => file.name.toLowerCase().endsWith('.png')); // Filter for PNG files
+function startPreview() {
+    isPreviewing = true;
+    previewBtn.innerHTML = '<span class="btn-icon">◼</span> Back to Video';
+    
+    // Smooth crossfade
+    videoPlayer.style.opacity = '0';
+    setTimeout(() => {
+        videoPlayer.style.display = "none";
+        animationPreview.style.display = "block";
+        animationPreview.style.opacity = '0';
+        
+        setTimeout(() => {
+            animationPreview.style.opacity = '1';
+        }, 50);
+    }, 200);
+    
+    navHint.style.display = "none";
+    previewHint.style.display = "block";
+    updateFpsDisplay();
+    runAnimationLoop();
+}
 
-    console.log(`Number of images imported: ${imageFiles.length}`); // Log the number of images imported
+function runAnimationLoop() {
+    clearInterval(previewInterval);
+    const ordered = getOrderedFrames();
+    let currentIdx = 0;
+    const ctx = animationPreview.getContext('2d');
+    animationPreview.width = videoPlayer.videoWidth;
+    animationPreview.height = videoPlayer.videoHeight;
 
-    if (imageFiles.length > 0) {
-        // Clear any existing images in the row
-        imageRow.innerHTML = '';
+    // In the ordered array, index 0 is always the impact frame (if set)
+    const impactIdxInLoop = (impactFrameIndex !== -1) ? 0 : -1;
 
-        // Loop through each selected image file and add it to the image row
-        imageFiles.forEach((file) => {
-            const imgElement = document.createElement('img'); // Create new img element
-            const reader = new FileReader();
+    previewInterval = setInterval(() => {
+        ctx.drawImage(ordered[currentIdx].canvas, 0, 0);
+        if (currentIdx === impactIdxInLoop) {
+            playSfx('select');
+        }
+        currentIdx = (currentIdx + 1) % ordered.length;
+    }, 1000 / currentPreviewFps);
+}
 
-            // Load image data
-            reader.onload = (e) => {
-                imgElement.src = e.target.result; // Set the loaded image as the source
-                imgElement.alt = file.name; // Set alt text to file name
-                imageRow.appendChild(imgElement); // Add the img element to the image row
+function stopPreview() {
+    isPreviewing = false;
+    previewBtn.innerHTML = '<span class="btn-icon">▶</span> Preview Animation';
+    clearInterval(previewInterval);
+    
+    // Smooth crossfade back
+    animationPreview.style.opacity = '0';
+    setTimeout(() => {
+        animationPreview.style.display = "none";
+        videoPlayer.style.display = "block";
+        videoPlayer.style.opacity = '0';
+        
+        setTimeout(() => {
+            videoPlayer.style.opacity = '1';
+        }, 50);
+    }, 200);
+    
+    navHint.style.display = "block";
+    previewHint.style.display = "none";
+}
 
-                // Add click event to display the clicked image in the main display
-                imgElement.addEventListener('click', () => {
-                    soundClick.play(); // Play sound when the button is clicked
-                    // Step 1: Smoothly reset any transformations (zoom, twist, etc.)
-                    currentImage.style.transition = 'transform 0.5s ease';
-                    currentImage.style.transform = 'scale(1) rotate(0deg)'; // Reset zoom and rotation
+function updateFpsDisplay() {
+    fpsDisplay.textContent = `${currentPreviewFps} FPS`;
+    localStorage.setItem('preferredFps', currentPreviewFps);
+    
+    // Pulse effect via CSS class
+    fpsDisplay.classList.add('fps-flash');
+    setTimeout(() => fpsDisplay.classList.remove('fps-flash'), 150);
+}
 
-                    // Wait for the transformation reset to complete before starting the downward slide
-                    currentImage.addEventListener('transitionend', function resetTransform() {
-                        // Remove the transitionend listener to avoid triggering on future transitions
-                        currentImage.removeEventListener('transitionend', resetTransform);
+// Global Controls
+function showNavArrow(direction) {
+    const arrowLeft  = document.getElementById('navArrowLeft');
+    const arrowRight = document.getElementById('navArrowRight');
 
-                        // Step 2: Apply downward animation after the reset
-                        currentImage.style.transition = 'transform 0.5s ease';
-                        currentImage.style.transform = 'translateY(150%)'; // Move image offscreen (downward)
+    if (isSeekMode) {
+        // In seek mode: persistent double-arrow only on the active direction
+        arrowLeft.classList.toggle('seek-hold', direction === 'left');
+        arrowRight.classList.toggle('seek-hold', direction === 'right');
+        return;
+    }
 
-                        // Step 3: Change the image after the downward animation completes
-                        currentImage.addEventListener('transitionend', function changeImage() {
-                            // Change the image source and alt text
-                            currentImage.src = imgElement.src;
-                            currentImage.alt = imgElement.alt;
-
-                            // Step 4: Bring the image back into view
-                            currentImage.style.transition = 'transform 0.5s ease';
-                            currentImage.style.transform = 'translateY(0)';
-
-                            // Remove the event listener to avoid triggering on future animations
-                            currentImage.removeEventListener('transitionend', changeImage);
-
-                            // Step 5: After the image comes back, reset zoom and rotation
-                            // Set zoom level to 1
-                            currentZoom = 1;
-
-                            // Reset rotation to initial values (0 for both axes)
-                            currentRotationX = 0;
-                            currentRotationY = 0;
-
-                            // Update zoom and rotation
-                            updateTransform();
-                        });
-                    });
-                });
-            };  
-            reader.readAsDataURL(file); // Read the image file
+    // Normal mode: snap to full opacity, then fade out
+    const arrow = direction === 'left' ? arrowLeft : arrowRight;
+    arrow.classList.remove('show');
+    arrow.style.opacity = '1';
+    arrow.style.animation = 'none';
+    // Small delay so the browser paints opacity:1 before starting fade-out
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            arrow.style.animation = '';
+            arrow.style.opacity  = '';
+            arrow.classList.add('show');
         });
-    }   
-});
-
-
-
-
-// FULLSCREEN
-document.getElementById('fullscreen-btn').addEventListener('click', function() {
-    if (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement) {
-      // If the page is in fullscreen, exit fullscreen
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      } else if (document.webkitExitFullscreen) { // Safari
-        document.webkitExitFullscreen();
-      } else if (document.mozCancelFullScreen) { // Firefox
-        document.mozCancelFullScreen();
-      } else if (document.msExitFullscreen) { // IE/Edge
-        document.msExitFullscreen();
-      }
-    } else {
-      // If the page is not in fullscreen, enter fullscreen
-      if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen();
-      } else if (document.documentElement.mozRequestFullScreen) { // Firefox
-        document.documentElement.mozRequestFullScreen();
-      } else if (document.documentElement.webkitRequestFullscreen) { // Chrome, Safari, Opera
-        document.documentElement.webkitRequestFullscreen();
-      } else if (document.documentElement.msRequestFullscreen) { // IE/Edge
-        document.documentElement.msRequestFullscreen();
-      }
-    }
-  });
-  
-
-
-
-
-buttons.forEach(button => {
-    button.addEventListener('mouseenter', function() {
-      // Randomize pitch between 0.95 (95%) and 1.05 (105%)
-      const randomPitch = Math.random() * 0.1 + 0.95; // Generates a number between 0.95 and 1.05
-      soundHover.playbackRate = randomPitch; // Apply the random pitch
-  
-      console.log(`Random pitch: ${randomPitch.toFixed(2)}`); // Debugging to check the random pitch
-      
-      soundHover.play(); // Play sound with randomized pitch
     });
-});
+}
 
+function showRangeModeIndicator() {
+    if (!rangeModeIndicator) {
+        rangeModeIndicator = document.createElement('div');
+        rangeModeIndicator.className = 'range-mode-indicator';
+        document.body.appendChild(rangeModeIndicator);
+    }
+    
+    const frameCount = spriteSheetFrames.length - rangeStartIndex;
+    rangeModeIndicator.innerHTML = `
+        ◉ RANGE MODE ACTIVE
+        <span class="range-count">${frameCount} frame${frameCount !== 1 ? 's' : ''} selected</span>
+    `;
+    rangeModeIndicator.style.display = 'block';
+}
 
+function hideRangeModeIndicator() {
+    if (rangeModeIndicator) {
+        rangeModeIndicator.style.animation = 'fadeOut 0.2s ease-out';
+        setTimeout(() => {
+            rangeModeIndicator.style.display = 'none';
+            rangeModeIndicator.style.animation = '';
+        }, 200);
+    }
+}
 
-buttons.forEach(button => {
-  button.addEventListener('click', function() {
-    soundClick.play(); // Play sound when the button is clicked
-  });
-});
+document.addEventListener('keydown', (e) => {
+    if (!videoPlayer.src) return;
 
+    // Enter seek mode when Shift is first pressed
+    if ((e.key === 'Shift') && !isSeekMode) {
+        isSeekMode = true;
+        showSeekModeIndicator();
+        // If a direction is already held, switch the running interval to seek speed
+        if (seekDirection !== 0) {
+            clearInterval(seekStepInterval);
+            seekStepInterval = setInterval(() => {
+                videoPlayer.currentTime = Math.max(0, Math.min(videoPlayer.duration,
+                    videoPlayer.currentTime + seekDirection * SEEK_PHASES[seekPhaseIndex].step));
+                playSfx('cursor');
+            }, SEEK_INTERVAL_MS);
+            showNavArrow(seekDirection === -1 ? 'left' : 'right');
+        }
+        return;
+    }
 
+    // ── Global shortcuts (work everywhere) ───────────────────────────────
+    if (e.key === ' ' && !e.repeat) {
+        e.preventDefault();
+        if (isPreviewing) { playSfx('back'); stopPreview(); }
+        else if (spriteSheetFrames.length > 0) { playSfx('select'); startPreview(); }
+        return;
+    }
+    if (e.key === 'Backspace' && !e.repeat) {
+        e.preventDefault();
+        if (spriteSheetFrames.length > 0) {
+            if (isPreviewing) stopPreview();
+            playSfx('back');
+            spriteSheetFrames = [];
+            impactFrameIndex = -1;
+            rangeStartTime = null;
+            rangeStartIndex = null;
+            clearTimeout(upHoldTimer);
+            upHoldTimer = null;
+            hideRangeModeIndicator();
+            rebuildSpriteGrid();
+            updateUI();
+        }
+        return;
+    }
+    if (e.key === 'Escape' && !e.repeat) {
+        e.preventDefault();
+        resetSpriteBtn.click();
+        return;
+    }
+    if (e.key === 'Enter' && !e.repeat) {
+        e.preventDefault();
+        if (e.shiftKey) {
+            if (!exportIndividualBtn.disabled) exportIndividualBtn.click();
+        } else {
+            if (!generateSpriteBtn.disabled) generateSpriteBtn.click();
+        }
+        return;
+    }
 
+    if (isPreviewing) {
+        // FPS Controls during preview — arrows + QD
+        const isLeft  = e.key === 'ArrowLeft'  || e.key === 'q' || e.key === 'Q';
+        const isRight = e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D';
+        if (isLeft) {
+            e.preventDefault();
+            currentPreviewFps = Math.max(1, currentPreviewFps - 1);
+            playSfx('cursor');
+            updateFpsDisplay();
+            runAnimationLoop();
+            showNavArrow('left');
+        }
+        if (isRight) {
+            e.preventDefault();
+            currentPreviewFps = Math.min(60, currentPreviewFps + 1);
+            playSfx('cursor');
+            updateFpsDisplay();
+            runAnimationLoop();
+            showNavArrow('right');
+        }
+        return;
+    }
 
-const hiddenElement = document.querySelector('.nav-control'); // Select the element by class
+    const isLeft  = e.key === 'ArrowLeft'  || e.key === 'q' || e.key === 'Q';
+    const isRight = e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D';
+    const isUp    = e.key === 'ArrowUp'    || e.key === 'z' || e.key === 'Z'
+                 || e.key === 'w' || e.key === 'W';
+    const isDown  = e.key === 'ArrowDown'  || e.key === 's' || e.key === 'S';
 
-folderPicker.addEventListener('change', (e) => {
-    const imageFiles = Array.from(e.target.files)
-        .filter(file => file.name.toLowerCase().endsWith('.png')); // Filter for PNG files
+    // ── Seek mode (Shift held) ────────────────────────────────────────────
+    if (isSeekMode) {
+        if (isLeft || isRight) {
+            e.preventDefault();
+            if (e.repeat) return; // interval handles movement, ignore repeats
+            const dir = isLeft ? -1 : 1;
+            seekDirection = dir;
+            // step once immediately, then start interval
+            videoPlayer.currentTime = Math.max(0, Math.min(videoPlayer.duration,
+                videoPlayer.currentTime + dir * SEEK_PHASES[seekPhaseIndex].step));
+            showNavArrow(dir === -1 ? 'left' : 'right');
+            if (!seekStepInterval) {
+                seekStepInterval = setInterval(() => {
+                    videoPlayer.currentTime = Math.max(0, Math.min(videoPlayer.duration,
+                        videoPlayer.currentTime + seekDirection * SEEK_PHASES[seekPhaseIndex].step));
+                    playSfx('cursor');
+                }, SEEK_INTERVAL_MS);
+            }
+        }
+        // Up = faster phase, Down = slower phase (arrows AND Z/W/S)
+        if (isUp && !e.repeat) {
+            e.preventDefault();
+            if (seekPhaseIndex < SEEK_PHASES.length - 1) {
+                seekPhaseIndex++;
+                playSfx('cursor');
+                showSeekModeIndicator();
+            }
+        }
+        if (isDown && !e.repeat) {
+            e.preventDefault();
+            if (seekPhaseIndex > 0) {
+                seekPhaseIndex--;
+                playSfx('cursor');
+                showSeekModeIndicator();
+            }
+        }
+        return;
+    }
 
-    // Control visibility of the nav-control, nav-left, and nav-right elements
-    if (imageFiles.length >= 2) {
-        hiddenElement.style.display = 'block'; // Reveal the nav-control element
-        navLeft.style.display = 'block'; // Reveal the nav-left element
-        navRight.style.display = 'block'; // Reveal the nav-right element
-    } else {
-        hiddenElement.style.display = 'none'; // Hide the nav-control element
-        navLeft.style.display = 'none'; // Hide the nav-left element
-        navRight.style.display = 'none'; // Hide the nav-right element
+    // ── Normal mode ───────────────────────────────────────────────────────
+    if (isLeft) {
+        e.preventDefault();
+        if (!e.repeat) {
+            clearInterval(seekStepInterval);
+            seekStepInterval = null;
+            document.getElementById('navArrowRight').classList.remove('show');
+            videoPlayer.currentTime = Math.max(0, videoPlayer.currentTime - VIDEO_NAV_STEP);
+            playSfx('cursor');
+            showNavArrow('left');
+            seekDirection = -1;
+            seekStepInterval = setInterval(() => {
+                videoPlayer.currentTime = Math.max(0, videoPlayer.currentTime - VIDEO_NAV_STEP);
+                playSfx('cursor');
+                showNavArrow('left');
+            }, SEEK_INTERVAL_MS);
+        }
+    }
+    if (isRight) {
+        e.preventDefault();
+        if (!e.repeat) {
+            clearInterval(seekStepInterval);
+            seekStepInterval = null;
+            document.getElementById('navArrowLeft').classList.remove('show');
+            videoPlayer.currentTime = Math.min(videoPlayer.duration, videoPlayer.currentTime + VIDEO_NAV_STEP);
+            playSfx('cursor');
+            showNavArrow('right');
+            seekDirection = 1;
+            seekStepInterval = setInterval(() => {
+                videoPlayer.currentTime = Math.min(videoPlayer.duration, videoPlayer.currentTime + VIDEO_NAV_STEP);
+                playSfx('cursor');
+                showNavArrow('right');
+            }, SEEK_INTERVAL_MS);
+        }
+    }
+    if (isDown && !e.repeat) {
+        e.preventDefault();
+        // Delete the most recent frame
+        if (spriteSheetFrames.length > 0) {
+            const idx = spriteSheetFrames.length - 1;
+            spriteSheetFrames.splice(idx, 1);
+            if (impactFrameIndex === idx) impactFrameIndex = -1;
+            else if (impactFrameIndex > idx) impactFrameIndex--;
+            playSfx('back');
+            rebuildSpriteGrid();
+            updateUI();
+        }
+    }
+    if (isUp && !e.repeat) {
+        e.preventDefault();
+        // Tap: capture one frame immediately
+        playSfx('select');
+        captureCurrentFrame();
+        // Start hold timer for range mode
+        upHoldTimer = setTimeout(() => {
+            upHoldTimer = null;
+            // Enter range mode: the frame we just captured is frame 0 of the range
+            rangeStartTime = videoPlayer.currentTime;
+            rangeStartIndex = spriteSheetFrames.length - 1;
+            showRangeModeIndicator();
+        }, UP_HOLD_DELAY);
     }
 });
 
+document.addEventListener('keyup', (e) => {
+    // Up released — cancel hold timer or commit range if active
+    if (!isPreviewing && (e.key === 'ArrowUp' || e.key === 'z' || e.key === 'Z'
+                       || e.key === 'w' || e.key === 'W')) {
+        if (upHoldTimer !== null) {
+            // Released before range mode kicked in — just the tap capture, nothing else
+            clearTimeout(upHoldTimer);
+            upHoldTimer = null;
+        } else if (rangeStartTime !== null) {
+            // Released after range mode was active — capture the range
+            const endTime = videoPlayer.currentTime;
+            const startTime = rangeStartTime;
+            playSfx('select');
+            if (endTime > startTime) {
+                captureRangeFrames(startTime, endTime);
+            }
+            rangeStartTime = null;
+            rangeStartIndex = null;
+            setTimeout(() => hideRangeModeIndicator(), 300);
+        }
+    }
 
+    // Exit seek mode when Shift is released
+    if (e.key === 'Shift' && isSeekMode) {
+        isSeekMode = false;
+        clearInterval(seekStepInterval);
+        seekStepInterval = null;
+        seekDirection = 0;
+        hideSeekModeIndicator();
+        document.getElementById('navArrowLeft').classList.remove('seek-hold');
+        document.getElementById('navArrowRight').classList.remove('seek-hold');
+        return;
+    }
 
+    // Stop interval when directional key is released (both normal and seek mode)
+    if (isSeekMode) {
+        const isLeft  = e.key === 'ArrowLeft'  || e.key === 'q' || e.key === 'Q';
+        const isRight = e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D';
+        if (isLeft || isRight) {
+            clearInterval(seekStepInterval);
+            seekStepInterval = null;
+            seekDirection = 0;
+            document.getElementById('navArrowLeft').classList.remove('seek-hold');
+            document.getElementById('navArrowRight').classList.remove('seek-hold');
+        }
+    } else {
+        const isLeft  = e.key === 'ArrowLeft'  || e.key === 'q' || e.key === 'Q';
+        const isRight = e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D';
+        if (isLeft || isRight) {
+            clearInterval(seekStepInterval);
+            seekStepInterval = null;
+            seekDirection = 0;
+        }
+    }
+});
 
+function showSeekModeIndicator() {
+    if (!seekModeIndicator) {
+        seekModeIndicator = document.createElement('div');
+        seekModeIndicator.className = 'seek-mode-indicator';
+        document.body.appendChild(seekModeIndicator);
+    }
+    const label = SEEK_PHASES[seekPhaseIndex]?.label ?? '';
+    seekModeIndicator.textContent = `⏩ SEEK — ${label}`;
+    seekModeIndicator.style.display = 'block';
+    seekModeIndicator.style.animation = 'none';
+}
 
+function hideSeekModeIndicator() {
+    if (seekModeIndicator) {
+        seekModeIndicator.style.animation = 'fadeOut 0.2s ease-out';
+        setTimeout(() => {
+            if (seekModeIndicator) seekModeIndicator.style.display = 'none';
+            if (seekModeIndicator) seekModeIndicator.style.animation = '';
+        }, 200);
+    }
+}
 
+function captureCurrentFrame() {
+    const canvas = document.createElement('canvas');
+    canvas.width = videoPlayer.videoWidth;
+    canvas.height = videoPlayer.videoHeight;
+    canvas.getContext('2d').drawImage(videoPlayer, 0, 0);
+    spriteSheetFrames.push({ canvas });
+    
+    // Haptic-like feedback via CSS class
+    videoPlayer.classList.add('capture-flash');
+    setTimeout(() => videoPlayer.classList.remove('capture-flash'), 100);
+    
+    rebuildSpriteGrid();
+    updateUI();
+    
+    // Auto-scroll to newest frame
+    setTimeout(() => {
+        const container = document.querySelector('.sprite-grid-container');
+        container.scrollLeft = container.scrollWidth;
+    }, 50);
+}
 
+async function captureRangeFrames(startTime, endTime) {
+    const timeDiff = endTime - startTime;
+    const framesToCapture = Math.ceil(timeDiff * 24); // 24 fps
+    
+    // Show loading feedback
+    const loadingText = document.querySelector('.loading-text');
+    const loadingSubtext = document.querySelector('.loading-subtext');
+    loadingText.textContent = 'CAPTURING';
+    loadingSubtext.textContent = `Extracting ${framesToCapture} frames...`;
+    loadingOverlay.classList.add('active');
+    
+    const originalTime = videoPlayer.currentTime;
+    
+    // Capture each frame
+    for (let i = 1; i <= framesToCapture; i++) {
+        const frameTime = startTime + (i * timeDiff / framesToCapture);
+        
+        // Seek to frame
+        videoPlayer.currentTime = frameTime;
+        
+        // Wait for seek to complete
+        await new Promise(resolve => {
+            const onSeeked = () => {
+                videoPlayer.removeEventListener('seeked', onSeeked);
+                resolve();
+            };
+            videoPlayer.addEventListener('seeked', onSeeked);
+        });
+        
+        // Small delay to ensure frame is ready
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        // Capture the frame
+        const canvas = document.createElement('canvas');
+        canvas.width = videoPlayer.videoWidth;
+        canvas.height = videoPlayer.videoHeight;
+        canvas.getContext('2d').drawImage(videoPlayer, 0, 0);
+        spriteSheetFrames.push({ canvas });
+        
+        // Update UI periodically
+        if (i % 5 === 0 || i === framesToCapture) {
+            loadingSubtext.textContent = `Captured ${i}/${framesToCapture} frames...`;
+            rebuildSpriteGrid();
+            updateUI();
+        }
+    }
+    
+    // Final UI update
+    rebuildSpriteGrid();
+    updateUI();
+    
+    // Auto-scroll to newest frames
+    setTimeout(() => {
+        const container = document.querySelector('.sprite-grid-container');
+        container.scrollLeft = container.scrollWidth;
+    }, 50);
+    
+    // Return to original time
+    videoPlayer.currentTime = originalTime;
+    
+    // Hide loading
+    loadingText.textContent = 'COMPLETE';
+    loadingSubtext.textContent = `${framesToCapture} frames captured!`;
+    setTimeout(() => {
+        loadingOverlay.classList.remove('active');
+    }, 600);
+}
 
+function rebuildSpriteGrid() {
+    // Clear grid but keep empty state if needed
+    if (spriteSheetFrames.length === 0) {
+        spriteGrid.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon">◇</div>
+                <div class="empty-text">No frames yet</div>
+                <div class="empty-hint">Capture frames from the video above</div>
+            </div>
+        `;
+        return;
+    }
+    
+    spriteGrid.innerHTML = '';
+    spriteSheetFrames.forEach((frameObj, index) => {
+        const slot = document.createElement('div');
+        slot.className = `sprite-slot filled ${index === impactFrameIndex ? 'impact-frame' : ''}`;
+        
+        // Delete button
+        const del = document.createElement('div');
+        del.className = 'delete-btn'; 
+        del.textContent = '✕';
+        del.title = 'Delete frame';
+        del.onclick = (e) => {
+            e.stopPropagation();
+            
+            // Animate out via CSS class
+            slot.classList.add('slot-removing');
+            
+            setTimeout(() => {
+                spriteSheetFrames.splice(index, 1);
+                if (impactFrameIndex === index) impactFrameIndex = -1;
+                else if (impactFrameIndex > index) impactFrameIndex--;
+                rebuildSpriteGrid();
+                updateUI();
+            }, 200);
+        };
 
+        // Frame number badge
+        const badge = document.createElement('div');
+        badge.className = 'sprite-slot-number';
+        badge.textContent = index + 1;
 
+        // Display canvas
+        const displayCanvas = document.createElement('canvas');
+        displayCanvas.width = frameObj.canvas.width;
+        displayCanvas.height = frameObj.canvas.height;
+        displayCanvas.getContext('2d').drawImage(frameObj.canvas, 0, 0);
+        
+        // Click to set impact frame
+        slot.onclick = () => { 
+            impactFrameIndex = index; 
+            rebuildSpriteGrid();
+            
+            // Scroll to impact frame
+            setTimeout(() => {
+                slot.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }, 50);
+        };
+        
+        slot.appendChild(del); 
+        slot.appendChild(badge);
+        slot.appendChild(displayCanvas);
+        spriteGrid.appendChild(slot);
+        
+        // Stagger animation
+        slot.style.animationDelay = `${index * 0.05}s`;
+    });
+}
+
+function updateUI() {
+    const hasFrames = spriteSheetFrames.length > 0;
+    const isSingle = spriteSheetFrames.length === 1;
+    generateSpriteBtn.disabled = !hasFrames;
+    previewBtn.disabled = !hasFrames;
+    clearFramesBtn.disabled = !hasFrames;
+    exportIndividualBtn.disabled = !hasFrames;
+    
+    // Update generate button label
+    if (isSingle) {
+        generateSpriteBtn.innerHTML = '<span class="btn-icon">↓</span> Save Screenshot';
+    } else {
+        generateSpriteBtn.innerHTML = '<span class="btn-icon">↓</span> Generate Sheet';
+    }
+    
+    // Update frame counter with animation
+    const newCount = `${spriteSheetFrames.length} frame${spriteSheetFrames.length !== 1 ? 's' : ''}`;
+    if (frameCounter.textContent !== newCount) {
+        frameCounter.textContent = newCount;
+        frameCounter.classList.toggle('has-frames', hasFrames);
+        frameCounter.classList.add('badge-pop');
+        setTimeout(() => frameCounter.classList.remove('badge-pop'), 150);
+    }
+}
+
+function resetInternalState() {
+    spriteSheetFrames = []; 
+    impactFrameIndex = -1;
+    rangeStartTime = null;
+    rangeStartIndex = null;
+    clearTimeout(upHoldTimer);
+    upHoldTimer = null;
+    stopPreview(); 
+    rebuildSpriteGrid(); 
+    updateUI();
+}
+
+function generateSpriteSheet() {
+    // Show loading briefly
+    const loadingText = document.querySelector('.loading-text');
+    const loadingSubtext = document.querySelector('.loading-subtext');
+    loadingOverlay.classList.add('active');
+    
+    const ordered = getOrderedFrames();
+    const isSingle = ordered.length === 1;
+    
+    if (isSingle) {
+        loadingText.textContent = 'EXPORTING';
+        loadingSubtext.textContent = 'Saving screenshot...';
+    } else {
+        loadingText.textContent = 'GENERATING';
+        loadingSubtext.textContent = 'Creating sprite sheet...';
+    }
+    
+    setTimeout(() => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const fw = ordered[0].canvas.width;
+        const fh = ordered[0].canvas.height;
+        
+        if (isSingle) {
+            // Pure single screenshot — no sheet
+            canvas.width = fw;
+            canvas.height = fh;
+            ctx.drawImage(ordered[0].canvas, 0, 0);
+        } else {
+            // Sprite sheet: max 5 per row, each new row after every 5 frames
+            const cols = Math.min(5, ordered.length);
+            const rows = Math.ceil(ordered.length / 5);
+            canvas.width = fw * cols;
+            canvas.height = fh * rows;
+
+            ordered.forEach((f, i) => {
+                const col = i % 5;
+                const row = Math.floor(i / 5);
+                ctx.drawImage(f.canvas, col * fw, row * fh);
+            });
+        }
+
+        canvas.toBlob((blob) => {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            if (isSingle) {
+                link.download = `screenshot_frame.png`;
+            } else {
+                link.download = `spritesheet_${ordered.length}frames_${currentPreviewFps}fps.png`;
+            }
+            link.href = url;
+            link.click();
+            playSfx('chord');
+            
+            // Cleanup
+            setTimeout(() => URL.revokeObjectURL(url), 100);
+            
+            // Success feedback
+            loadingText.textContent = 'SUCCESS';
+            loadingSubtext.textContent = isSingle ? 'Screenshot downloaded!' : 'Sprite sheet downloaded!';
+            
+            setTimeout(() => {
+                loadingOverlay.classList.remove('active');
+            }, 800);
+        }, 'image/png');
+    }, 300);
+}
+
+generateSpriteBtn.addEventListener('click', generateSpriteSheet);
+
+// Initialize
+updateUI();
